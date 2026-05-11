@@ -1,13 +1,11 @@
-import { BrowserRouter } from 'react-router-dom';
-import AppRoutes from './core/router/AppRoutes';
-import './shared/styles/global.css';
+import AppProviders from '@/app/providers/AppProviders'
+import AppRoutes from '@/core/router/AppRoutes'
+import '@/shared/styles/global.css'
 
-function App() {
+export default function App() {
   return (
-    <BrowserRouter>
+    <AppProviders>
       <AppRoutes />
-    </BrowserRouter>
-  );
+    </AppProviders>
+  )
 }
-
-export default App;
