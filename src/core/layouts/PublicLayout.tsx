@@ -1,4 +1,10 @@
-import { BookOutlined, LoginOutlined, LogoutOutlined, UserOutlined } from '@ant-design/icons'
+import {
+  BookOutlined,
+  EnvironmentOutlined,
+  LoginOutlined,
+  LogoutOutlined,
+  UserOutlined,
+} from '@ant-design/icons'
 import { Avatar, Button, Dropdown, Layout, Space } from 'antd'
 import type { MenuProps } from 'antd'
 import { memo, useCallback, useMemo } from 'react'
@@ -26,10 +32,22 @@ function PublicLayoutImpl() {
     () => ({
       items: [
         {
+          key: 'profile',
+          icon: <UserOutlined />,
+          label: <Link to="/profile">Hồ sơ của tôi</Link>,
+        },
+        {
+          key: 'addresses',
+          icon: <EnvironmentOutlined />,
+          label: <Link to="/profile/addresses">Địa chỉ nhận hàng</Link>,
+        },
+        { type: 'divider' as const },
+        {
           key: 'logout',
           icon: <LogoutOutlined />,
           label: 'Đăng xuất',
           onClick: handleLogout,
+          danger: true,
         },
       ],
     }),
@@ -60,7 +78,7 @@ function PublicLayoutImpl() {
           <Dropdown menu={userMenu} trigger={['click']}>
             <Space style={{ cursor: 'pointer' }}>
               <Avatar size="small" icon={<UserOutlined />} />
-              <span>{user.email}</span>
+              <span>{user.fullName || user.email}</span>
             </Space>
           </Dropdown>
         ) : (

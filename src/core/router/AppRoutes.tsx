@@ -7,24 +7,45 @@ import RoleRoute from '@/core/router/RoleRoute'
 import AdminHomePage from '@/modules/admin/pages/AdminHomePage'
 import LoginPage from '@/modules/auth/pages/LoginPage'
 import RegisterPage from '@/modules/auth/pages/RegisterPage'
+import ForgotPasswordPage from '@/modules/auth/pages/ForgotPasswordPage'
+import ResetPasswordPage from '@/modules/auth/pages/ResetPasswordPage'
+import ChangePasswordPage from '@/modules/auth/pages/ChangePasswordPage'
 import NotFoundPage from '@/modules/common/pages/NotFoundPage'
 import { HomePage } from '@/modules/home/pages/HomePage'
 import StaffHomePage from '@/modules/staff/pages/StaffHomePage'
+import ProfilePage from '@/modules/account/pages/ProfilePage'
+import AddressPage from '@/modules/account/pages/AddressPage'
 
 export default function AppRoutes() {
   return (
     <Routes>
-      {/* Auth (public) */}
+      {/* ─── Auth (public) ─────────────────────────────────────── */}
       <Route path="/auth/login" element={<LoginPage />} />
       <Route path="/auth/register" element={<RegisterPage />} />
+      <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/auth/reset-password" element={<ResetPasswordPage />} />
 
-      {/* Customer / public (có header chung) */}
+      {/* ─── Customer / public (có header chung) ──────────────── */}
       <Route element={<PublicLayout />}>
         <Route index element={<HomePage />} />
         {/* TODO: /books, /books/:id, /cart, /checkout ... */}
       </Route>
 
-      {/* Admin */}
+      {/* ─── Profile (user đã đăng nhập) ──────────────────────── */}
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute>
+            <PublicLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<ProfilePage />} />
+        <Route path="addresses" element={<AddressPage />} />
+        <Route path="change-password" element={<ChangePasswordPage />} />
+      </Route>
+
+      {/* ─── Admin ────────────────────────────────────────────── */}
       <Route
         path="/admin"
         element={
@@ -37,7 +58,7 @@ export default function AppRoutes() {
         {/* TODO: nested admin pages */}
       </Route>
 
-      {/* Staff (cả SELLER và WAREHOUSE) */}
+      {/* ─── Staff (cả SELLER và WAREHOUSE) ───────────────────── */}
       <Route
         path="/staff"
         element={
@@ -48,18 +69,6 @@ export default function AppRoutes() {
       >
         <Route index element={<StaffHomePage />} />
         {/* TODO: nested staff pages */}
-      </Route>
-
-      {/* Ví dụ route private cho mọi user đã login (sau này): /profile */}
-      <Route
-        path="/profile"
-        element={
-          <ProtectedRoute>
-            <PublicLayout />
-          </ProtectedRoute>
-        }
-      >
-        <Route index element={<div>Profile (placeholder)</div>} />
       </Route>
 
       <Route path="/404" element={<NotFoundPage />} />
