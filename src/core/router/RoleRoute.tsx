@@ -8,9 +8,10 @@ import { useAuthInitializing, useAuthUser } from '@/shared/store/authStore'
 type Props = {
   allowed: UserRole[]
   children: ReactNode
+  loginPath?: string
 }
 
-export default function RoleRoute({ allowed, children }: Props) {
+export default function RoleRoute({ allowed, children, loginPath = '/auth/login' }: Props) {
   const isInitializing = useAuthInitializing()
   const user = useAuthUser()
   const location = useLocation()
@@ -23,7 +24,7 @@ export default function RoleRoute({ allowed, children }: Props) {
     )
   }
   if (!user) {
-    return <Navigate to="/auth/login" replace state={{ from: location.pathname }} />
+    return <Navigate to={loginPath} replace state={{ from: location.pathname }} />
   }
   if (!allowed.includes(user.role)) {
     return <Navigate to={homePathForRole(user.role)} replace />

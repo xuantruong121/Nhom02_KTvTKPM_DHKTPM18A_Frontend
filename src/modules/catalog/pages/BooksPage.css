@@ -2,56 +2,9 @@
   padding: 22px 24px 34px;
 }
 
-.books-page-hero,
 .books-page-shell {
   width: min(1240px, 100%);
   margin: 0 auto;
-}
-
-.books-page-hero {
-  display: grid;
-  grid-template-columns: minmax(280px, 1fr) minmax(320px, 520px);
-  gap: 24px;
-  align-items: end;
-  padding: 28px;
-  margin-bottom: 18px;
-  border-radius: 8px;
-  background: linear-gradient(135deg, #fff7ed 0%, #ffe4e6 100%);
-}
-
-.books-page-hero h1 {
-  margin: 0 0 8px;
-  color: #9f1239;
-  letter-spacing: 0;
-}
-
-.books-page-hero p {
-  max-width: 620px;
-  margin-bottom: 0;
-  color: #7f1d1d;
-}
-
-.books-search-autocomplete {
-  width: 100%;
-}
-
-.books-suggestion {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
-.books-suggestion strong,
-.books-suggestion span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.books-suggestion span {
-  color: var(--se-color-text-muted);
-  font-size: 12px;
 }
 
 .books-page-shell {
@@ -140,11 +93,6 @@
 @media (max-width: 760px) {
   .books-page {
     padding: 14px;
-  }
-
-  .books-page-hero {
-    grid-template-columns: 1fr;
-    padding: 22px;
   }
 
   .books-filter-grid {

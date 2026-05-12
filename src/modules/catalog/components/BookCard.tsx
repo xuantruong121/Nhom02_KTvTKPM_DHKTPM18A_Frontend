@@ -2,6 +2,7 @@ import { BookOutlined, ShoppingCartOutlined, StarFilled } from '@ant-design/icon
 import { Button, Card, Flex, Image, Space, Tag, Typography } from 'antd'
 import { Link } from 'react-router-dom'
 import type { Book } from '@/modules/catalog/api/catalogApi'
+import { useAddToCart } from '@/modules/cart/hooks/useAddToCart'
 import './BookCard.css'
 
 const currencyFormatter = new Intl.NumberFormat('vi-VN', {
@@ -28,6 +29,7 @@ function getDiscount(book: Book) {
 
 export function BookCard({ book }: { book: Book }) {
   const discount = getDiscount(book)
+  const { addToCart, isPending } = useAddToCart()
 
   return (
     <Card hoverable className="catalog-book-card">
@@ -74,7 +76,8 @@ export function BookCard({ book }: { book: Book }) {
         type="primary"
         icon={<ShoppingCartOutlined />}
         disabled={book.quantity <= 0}
-        onClick={(event) => event.stopPropagation()}
+        loading={isPending}
+        onClick={() => void addToCart({ bookId: book.id, quantity: 1 })}
       >
         Thêm vào giỏ
       </Button>

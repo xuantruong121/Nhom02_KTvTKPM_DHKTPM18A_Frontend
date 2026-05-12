@@ -1,18 +1,10 @@
+import { AppstoreOutlined, ClearOutlined, FilterOutlined, SlidersOutlined } from '@ant-design/icons'
 import {
-  AppstoreOutlined,
-  ClearOutlined,
-  FilterOutlined,
-  SearchOutlined,
-  SlidersOutlined,
-} from '@ant-design/icons'
-import {
-  AutoComplete,
   Button,
   Card,
   Col,
   Empty,
   Flex,
-  Input,
   InputNumber,
   Pagination,
   Row,
@@ -22,7 +14,7 @@ import {
   Space,
   Typography,
 } from 'antd'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { catalogApi, type Book } from '@/modules/catalog/api/catalogApi'
 import { BookCard } from '@/modules/catalog/components/BookCard'
@@ -62,7 +54,6 @@ export function BooksPage() {
   const initialTitle = searchParams.get('title') ?? ''
   const initialCategory = searchParams.get('categoryId') ?? 'all'
 
-  const [title, setTitle] = useState(initialTitle)
   const [submittedTitle, setSubmittedTitle] = useState(initialTitle)
   const [categoryId, setCategoryId] = useState(initialCategory)
   const [minPrice, setMinPrice] = useState<number | null>(null)
@@ -71,12 +62,18 @@ export function BooksPage() {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(12)
 
+  // Sync state when URL search params change (e.g. navigating from header search)
+  useEffect(() => {
+    const nextTitle = searchParams.get('title') ?? ''
+    const nextCategory = searchParams.get('categoryId') ?? 'all'
+    setSubmittedTitle(nextTitle)
+    setCategoryId(nextCategory)
+    setPage(1)
+  }, [searchParams])
+
   const selectedCategoryId = categoryId === 'all' ? undefined : Number(categoryId)
 
   const categoriesQuery = useApiQuery(['catalog', 'categories'], () => catalogApi.getCategories())
-  const suggestionsQuery = useApiQuery(['catalog', 'books', 'suggestions'], () =>
-    catalogApi.getBooks()
-  )
   const booksQuery = useApiQuery(['catalog', 'books', submittedTitle, selectedCategoryId], () =>
     catalogApi.getBooks({ title: submittedTitle || undefined, categoryId: selectedCategoryId })
   )
@@ -98,25 +95,6 @@ export function BooksPage() {
 
   const effectiveMinPrice = minPrice ?? priceBounds.min
   const effectiveMaxPrice = maxPrice ?? priceBounds.max
-
-  const suggestionOptions = useMemo(() => {
-    const keyword = title.trim().toLowerCase()
-    if (!keyword) return []
-
-    return (suggestionsQuery.data ?? [])
-      .filter(isActive)
-      .filter((book) => matchesText(book, keyword))
-      .slice(0, 8)
-      .map((book) => ({
-        value: book.title,
-        label: (
-          <div className="books-suggestion">
-            <strong>{book.title}</strong>
-            <span>{book.author || book.publisher || 'SEBook'}</span>
-          </div>
-        ),
-      }))
-  }, [suggestionsQuery.data, title])
 
   const filteredBooks = useMemo(() => {
     const result = books.filter((book) => {
@@ -145,21 +123,6 @@ export function BooksPage() {
   const loading = categoriesQuery.isLoading || booksQuery.isLoading
   const hasError = categoriesQuery.isError || booksQuery.isError
 
-  const handleSearch = (value = title) => {
-    const nextTitle = value.trim()
-    setSubmittedTitle(nextTitle)
-    setTitle(nextTitle)
-    setPage(1)
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev)
-      if (nextTitle) next.set('title', nextTitle)
-      else next.delete('title')
-      if (categoryId !== 'all') next.set('categoryId', categoryId)
-      else next.delete('categoryId')
-      return next
-    })
-  }
-
   const handleCategoryChange = (value: string) => {
     setCategoryId(value)
     setPage(1)
@@ -174,7 +137,6 @@ export function BooksPage() {
   }
 
   const clearFilters = () => {
-    setTitle('')
     setSubmittedTitle('')
     setCategoryId('all')
     setMinPrice(null)
@@ -186,32 +148,6 @@ export function BooksPage() {
 
   return (
     <main className="books-page">
-      <section className="books-page-hero">
-        <div>
-          <Typography.Title level={1}>Tất cả sách</Typography.Title>
-          <Typography.Paragraph>
-            Tìm kiếm, lọc danh mục và duyệt danh sách sách đang có trong hệ thống SEBook.
-          </Typography.Paragraph>
-        </div>
-        <AutoComplete
-          className="books-search-autocomplete"
-          value={title}
-          options={suggestionOptions}
-          onChange={setTitle}
-          onSelect={(value) => handleSearch(value)}
-        >
-          <Input.Search
-            className="se-control"
-            size="large"
-            allowClear
-            enterButton="Tìm sách"
-            prefix={<SearchOutlined />}
-            placeholder="Tên sách, tác giả, nhà xuất bản hoặc ISBN"
-            onSearch={handleSearch}
-          />
-        </AutoComplete>
-      </section>
-
       <section className="books-page-shell">
         <Card className="books-filter-card se-card">
           <Flex align="center" justify="space-between" className="books-filter-title se-toolbar">

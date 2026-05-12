@@ -152,8 +152,13 @@
 }
 
 .cart-summary-card h3 {
-  margin: 0 0 18px;
+  margin: 0 0 8px;
   letter-spacing: 0;
+}
+
+.cart-selected-note {
+  display: block;
+  margin-bottom: 18px;
 }
 
 .cart-summary-row,

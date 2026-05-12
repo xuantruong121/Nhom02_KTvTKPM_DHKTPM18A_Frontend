@@ -4,13 +4,27 @@ import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { getErrorMessage } from '@/shared/api/http'
 import { useAuth } from '@/modules/auth/hooks/useAuth'
-import type { LoginRequest } from '@/modules/auth/types'
+import type { LoginRequest, UserRole } from '@/modules/auth/types'
 import { homePathForRole } from '@/modules/auth/utils/roleRedirect'
 
 type LocationState = { from?: string; fromRegister?: boolean; email?: string }
 
-export default function LoginPage() {
-  const { login } = useAuth()
+type LoginPageProps = {
+  title?: string
+  subtitle?: string
+  allowedRoles?: UserRole[]
+  defaultRedirect?: string
+  showRegisterLink?: boolean
+}
+
+export default function LoginPage({
+  title = 'Đăng nhập',
+  subtitle = 'SEBook - chào mừng bạn quay lại',
+  allowedRoles,
+  defaultRedirect,
+  showRegisterLink = true,
+}: LoginPageProps) {
+  const { login, logout } = useAuth()
   const { message } = App.useApp()
   const navigate = useNavigate()
   const location = useLocation()
@@ -36,7 +50,12 @@ export default function LoginPage() {
     setError(null)
     try {
       const user = await login({ email: values.email.trim(), password: values.password })
-      navigate(fallback ?? homePathForRole(user.role), { replace: true })
+      if (allowedRoles && !allowedRoles.includes(user.role)) {
+        await logout()
+        setError('Tài khoản này không có quyền truy cập khu vực đã chọn.')
+        return
+      }
+      navigate(fallback ?? defaultRedirect ?? homePathForRole(user.role), { replace: true })
     } catch (err) {
       setError(getErrorMessage(err))
     } finally {
@@ -57,14 +76,19 @@ export default function LoginPage() {
       <Card style={{ width: 420, boxShadow: '0 10px 30px rgba(15,23,42,0.08)' }}>
         <div style={{ textAlign: 'center', marginBottom: 16 }}>
           <Typography.Title level={3} style={{ marginBottom: 0 }}>
-            Đăng nhập
+            {title}
           </Typography.Title>
-          <Typography.Text type="secondary">SEBook — chào mừng bạn quay lại</Typography.Text>
+          <Typography.Text type="secondary">{subtitle}</Typography.Text>
         </div>
         {error && (
           <Alert type="error" message={error} showIcon style={{ marginBottom: 16 }} closable />
         )}
-        <Form<LoginRequest> form={form} layout="vertical" onFinish={handleFinish} autoComplete="off">
+        <Form<LoginRequest>
+          form={form}
+          layout="vertical"
+          onFinish={handleFinish}
+          autoComplete="off"
+        >
           <Form.Item
             label="Email"
             name="email"
@@ -103,10 +127,12 @@ export default function LoginPage() {
           <Button type="primary" htmlType="submit" size="large" block loading={loading}>
             Đăng nhập
           </Button>
-          <div style={{ marginTop: 16, textAlign: 'center' }}>
-            <Typography.Text type="secondary">Chưa có tài khoản? </Typography.Text>
-            <Link to="/auth/register">Đăng ký ngay</Link>
-          </div>
+          {showRegisterLink ? (
+            <div style={{ marginTop: 16, textAlign: 'center' }}>
+              <Typography.Text type="secondary">Chưa có tài khoản? </Typography.Text>
+              <Link to="/auth/register">Đăng ký ngay</Link>
+            </div>
+          ) : null}
         </Form>
       </Card>
     </div>

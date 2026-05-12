@@ -10,6 +10,7 @@ import RegisterPage from '@/modules/auth/pages/RegisterPage'
 import ForgotPasswordPage from '@/modules/auth/pages/ForgotPasswordPage'
 import ResetPasswordPage from '@/modules/auth/pages/ResetPasswordPage'
 import ChangePasswordPage from '@/modules/auth/pages/ChangePasswordPage'
+import { CartPage } from '@/modules/cart/pages/CartPage'
 import NotFoundPage from '@/modules/common/pages/NotFoundPage'
 import { HomePage } from '@/modules/home/pages/HomePage'
 import { BookDetailPage } from '@/modules/catalog/pages/BookDetailPage'
@@ -23,6 +24,30 @@ export default function AppRoutes() {
     <Routes>
       {/* ─── Auth (public) ─────────────────────────────────────── */}
       <Route path="/auth/login" element={<LoginPage />} />
+      <Route
+        path="/admin/login"
+        element={
+          <LoginPage
+            title="Đăng nhập Admin"
+            subtitle="SEBook Admin - khu vực quản trị hệ thống"
+            allowedRoles={['ADMIN']}
+            defaultRedirect="/admin"
+            showRegisterLink={false}
+          />
+        }
+      />
+      <Route
+        path="/staff/login"
+        element={
+          <LoginPage
+            title="Đăng nhập Staff"
+            subtitle="SEBook Staff - khu vực vận hành bán hàng và kho"
+            allowedRoles={['STAFF_SELLER', 'STAFF_WAREHOUSE']}
+            defaultRedirect="/staff"
+            showRegisterLink={false}
+          />
+        }
+      />
       <Route path="/auth/register" element={<RegisterPage />} />
       <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/auth/reset-password" element={<ResetPasswordPage />} />
@@ -32,7 +57,15 @@ export default function AppRoutes() {
         <Route index element={<HomePage />} />
         <Route path="/books" element={<BooksPage />} />
         <Route path="/books/:id" element={<BookDetailPage />} />
-        {/* TODO: /cart, /checkout ... */}
+        <Route
+          path="/cart"
+          element={
+            <ProtectedRoute>
+              <CartPage />
+            </ProtectedRoute>
+          }
+        />
+        {/* TODO: /checkout ... */}
       </Route>
 
       {/* ─── Profile (user đã đăng nhập) ──────────────────────── */}
@@ -53,7 +86,7 @@ export default function AppRoutes() {
       <Route
         path="/admin"
         element={
-          <RoleRoute allowed={['ADMIN']}>
+          <RoleRoute allowed={['ADMIN']} loginPath="/admin/login">
             <AdminLayout />
           </RoleRoute>
         }
@@ -66,7 +99,7 @@ export default function AppRoutes() {
       <Route
         path="/staff"
         element={
-          <RoleRoute allowed={['STAFF_SELLER', 'STAFF_WAREHOUSE']}>
+          <RoleRoute allowed={['STAFF_SELLER', 'STAFF_WAREHOUSE']} loginPath="/staff/login">
             <StaffLayout />
           </RoleRoute>
         }

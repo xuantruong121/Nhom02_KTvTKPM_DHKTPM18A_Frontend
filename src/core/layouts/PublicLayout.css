@@ -4,10 +4,14 @@
 }
 
 .public-header {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
   height: auto;
   padding: 0;
   background: #fff;
   border-bottom: 1px solid #ececec;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.06);
   line-height: 1.4;
 }
 
@@ -54,8 +58,27 @@
   font-weight: 600;
 }
 
-.public-search .ant-input-affix-wrapper {
-  border-color: #c92127;
+.public-search {
+  width: 100%;
+}
+
+.public-suggestion {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.public-suggestion strong,
+.public-suggestion span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.public-suggestion span {
+  color: var(--se-color-text-muted);
+  font-size: 12px;
 }
 
 .public-actions {

@@ -13,6 +13,7 @@ import {
   UserOutlined,
 } from '@ant-design/icons'
 import {
+  AutoComplete,
   Avatar,
   Badge,
   Button,
@@ -26,8 +27,11 @@ import {
   Space,
 } from 'antd'
 import type { MenuProps } from 'antd'
-import { memo, useCallback, useMemo } from 'react'
+import { memo, useCallback, useMemo, useState } from 'react'
 import { Link, Outlet, useNavigate } from 'react-router-dom'
+import { cartApi } from '@/modules/cart/api/cartApi'
+import { catalogApi } from '@/modules/catalog/api/catalogApi'
+import { useApiQuery } from '@/shared/hooks/useApiQuery'
 import { useAuthStore, useAuthUser } from '@/shared/store/authStore'
 import './PublicLayout.css'
 
@@ -64,6 +68,45 @@ function PublicLayoutImpl() {
   const user = useAuthUser()
   const logout = useAuthStore((s) => s.logout)
   const navigate = useNavigate()
+  const cartQuery = useApiQuery(['cart'], () => cartApi.getCart(), {
+    enabled: Boolean(user),
+  })
+  const cartCount = useMemo(
+    () => cartQuery.data?.items.length ?? 0,
+    [cartQuery.data?.items]
+  )
+
+  const [searchValue, setSearchValue] = useState('')
+  const booksQuery = useApiQuery(['catalog', 'books', 'header-search'], () =>
+    catalogApi.getBooks()
+  )
+
+  const suggestionOptions = useMemo(() => {
+    const keyword = searchValue.trim().toLowerCase()
+    if (!keyword) return []
+
+    function isActive(entity: { active?: boolean; isActive?: boolean }) {
+      return entity.active ?? entity.isActive ?? true
+    }
+
+    return (booksQuery.data ?? [])
+      .filter(isActive)
+      .filter((book) => {
+        return [book.title, book.author, book.publisher, book.isbn]
+          .filter(Boolean)
+          .some((value) => String(value).toLowerCase().includes(keyword))
+      })
+      .slice(0, 8)
+      .map((book) => ({
+        value: book.title,
+        label: (
+          <div className="public-suggestion">
+            <strong>{book.title}</strong>
+            <span>{book.author || book.publisher || 'SEBook'}</span>
+          </div>
+        ),
+      }))
+  }, [booksQuery.data, searchValue])
 
   const handleLogout = useCallback(async () => {
     await logout()
@@ -78,6 +121,14 @@ function PublicLayoutImpl() {
       navigate(keyword ? `/books?title=${encodeURIComponent(keyword)}` : '/books')
     },
     [navigate]
+  )
+
+  const handleSearchSelect = useCallback(
+    (value: string) => {
+      setSearchValue(value)
+      handleSearch(value)
+    },
+    [handleSearch]
   )
 
   const userMenu = useMemo<MenuProps>(
@@ -140,22 +191,30 @@ function PublicLayoutImpl() {
             </Button>
           </Popover>
 
-          <Input.Search
+          <AutoComplete
             className="public-search"
-            size="large"
-            prefix={<SearchOutlined />}
-            placeholder="Tìm kiếm sách, tác giả, nhà xuất bản..."
-            enterButton="Tìm"
-            allowClear
-            onSearch={handleSearch}
-          />
+            value={searchValue}
+            options={suggestionOptions}
+            onChange={setSearchValue}
+            onSelect={handleSearchSelect}
+            filterOption={false}
+          >
+            <Input.Search
+              size="large"
+              prefix={<SearchOutlined />}
+              placeholder="Tìm kiếm sách, tác giả, nhà xuất bản..."
+              enterButton="Tìm"
+              allowClear
+              onSearch={handleSearch}
+            />
+          </AutoComplete>
 
           <Space className="public-actions" size={14}>
             <Button type="text" icon={<BellOutlined />}>
               Thông báo
             </Button>
-            <Badge count={0} size="small">
-              <Button type="text" icon={<ShoppingCartOutlined />}>
+            <Badge count={cartCount} size="small">
+              <Button type="text" icon={<ShoppingCartOutlined />} onClick={() => navigate('/cart')}>
                 Giỏ hàng
               </Button>
             </Badge>
