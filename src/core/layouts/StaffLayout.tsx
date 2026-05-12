@@ -38,7 +38,7 @@ function StaffLayoutImpl() {
 
   const handleLogout = useCallback(async () => {
     await logout()
-    navigate('/auth/login', { replace: true })
+    navigate('/staff/login', { replace: true })
   }, [logout, navigate])
 
   const selectedKeys = useMemo(() => [location.pathname], [location.pathname])

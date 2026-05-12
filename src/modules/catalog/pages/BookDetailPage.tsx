@@ -30,6 +30,7 @@ import { useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { catalogApi, type Book, type Category } from '@/modules/catalog/api/catalogApi'
 import { BookCard } from '@/modules/catalog/components/BookCard'
+import { useAddToCart } from '@/modules/cart/hooks/useAddToCart'
 import { useApiQuery } from '@/shared/hooks/useApiQuery'
 import './BookDetailPage.css'
 
@@ -68,6 +69,7 @@ export function BookDetailPage() {
   const params = useParams<{ id: string }>()
   const bookId = Number(params.id)
   const [quantity, setQuantity] = useState(1)
+  const { addToCart, isPending: isAddingToCart } = useAddToCart()
 
   const bookQuery = useApiQuery(['catalog', 'book', bookId], () => catalogApi.getBook(bookId), {
     enabled: Number.isFinite(bookId),
@@ -226,10 +228,22 @@ export function BookDetailPage() {
               </Flex>
 
               <Flex gap={12} wrap="wrap" className="book-action-row">
-                <Button size="large" icon={<ShoppingCartOutlined />} disabled={stock <= 0}>
+                <Button
+                  size="large"
+                  icon={<ShoppingCartOutlined />}
+                  disabled={stock <= 0}
+                  loading={isAddingToCart}
+                  onClick={() => void addToCart({ bookId: book.id, quantity })}
+                >
                   Thêm vào giỏ hàng
                 </Button>
-                <Button size="large" type="primary" disabled={stock <= 0}>
+                <Button
+                  size="large"
+                  type="primary"
+                  disabled={stock <= 0}
+                  loading={isAddingToCart}
+                  onClick={() => void addToCart({ bookId: book.id, quantity })}
+                >
                   Mua ngay
                 </Button>
                 <Button size="large" icon={<HeartOutlined />} />

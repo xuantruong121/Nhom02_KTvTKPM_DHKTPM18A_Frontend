@@ -22,7 +22,7 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
-import { cartApi, type CartItem } from '@/modules/cart/api/cartApi'
+import { cartApi, type Cart, type CartItem } from '@/modules/cart/api/cartApi'
 import { catalogApi } from '@/modules/catalog/api/catalogApi'
 import { useApiMutation, useApiQuery } from '@/shared/hooks/useApiQuery'
 import './CartPage.css'
@@ -69,39 +69,39 @@ export function CartPage() {
     },
   })
 
-  const updateQuantityMutation = useApiMutation<string, unknown, { bookId: number; quantity: number }, { previousCart: unknown }>(
-    (payload) => cartApi.updateItem(payload),
-    {
-      onMutate: async (payload) => {
-        await queryClient.cancelQueries({ queryKey: ['cart'] })
+  const updateQuantityMutation = useApiMutation<
+    string,
+    unknown,
+    { bookId: number; quantity: number },
+    { previousCart?: Cart }
+  >((payload) => cartApi.updateItem(payload), {
+    onMutate: async (payload) => {
+      await queryClient.cancelQueries({ queryKey: ['cart'] })
 
-        const previousCart = queryClient.getQueryData(['cart'])
+      const previousCart = queryClient.getQueryData<Cart>(['cart'])
 
-        queryClient.setQueryData(['cart'], (old: any) => {
-          if (!old) return old
-          return {
-            ...old,
-            items: old.items.map((item: any) =>
-              item.bookId === payload.bookId
-                ? { ...item, quantity: payload.quantity }
-                : item
-            ),
-          }
-        })
-
-        return { previousCart }
-      },
-      onError: (_err, _payload, context) => {
-        if (context?.previousCart) {
-          queryClient.setQueryData(['cart'], context.previousCart)
+      queryClient.setQueryData<Cart>(['cart'], (old) => {
+        if (!old) return old
+        return {
+          ...old,
+          items: old.items.map((item) =>
+            item.bookId === payload.bookId ? { ...item, quantity: payload.quantity } : item
+          ),
         }
-        void message.error('Có lỗi xảy ra khi cập nhật số lượng')
-      },
-      onSettled: async () => {
-        await queryClient.invalidateQueries({ queryKey: ['cart'] })
-      },
-    }
-  )
+      })
+
+      return { previousCart }
+    },
+    onError: (_err, _payload, context) => {
+      if (context?.previousCart) {
+        queryClient.setQueryData(['cart'], context.previousCart)
+      }
+      void message.error('Có lỗi xảy ra khi cập nhật số lượng')
+    },
+    onSettled: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['cart'] })
+    },
+  })
 
   const items = useMemo(() => cartQuery.data?.items ?? [], [cartQuery.data?.items])
   const booksById = useMemo(
@@ -111,9 +111,27 @@ export function CartPage() {
 
   /* ── Bulk selection state ──────────────────────────────── */
   const [selectedKeys, setSelectedKeys] = useState<Set<number>>(new Set())
+  const hasInitializedSelection = useRef(false)
 
-  const allSelected = items.length > 0 && selectedKeys.size === items.length
-  const someSelected = selectedKeys.size > 0 && !allSelected
+  useEffect(() => {
+    setSelectedKeys((prev) => {
+      if (items.length === 0) {
+        hasInitializedSelection.current = false
+        return new Set()
+      }
+
+      if (!hasInitializedSelection.current) {
+        hasInitializedSelection.current = true
+        return new Set(items.map((item) => item.bookId))
+      }
+
+      const itemKeys = new Set(items.map((item) => item.bookId))
+      return new Set([...prev].filter((bookId) => itemKeys.has(bookId)))
+    })
+  }, [items])
+
+  const allSelected = items.length > 0 && items.every((item) => selectedKeys.has(item.bookId))
+  const someSelected = items.some((item) => selectedKeys.has(item.bookId)) && !allSelected
 
   const toggleAll = () => {
     if (allSelected) {
@@ -153,8 +171,9 @@ export function CartPage() {
 
   // Cleanup timers on unmount
   useEffect(() => {
+    const timers = debounceTimers.current
     return () => {
-      debounceTimers.current.forEach((timer) => clearTimeout(timer))
+      timers.forEach((timer) => clearTimeout(timer))
     }
   }, [])
 
@@ -217,12 +236,36 @@ export function CartPage() {
   }
 
   /* ── Derived data ──────────────────────────────────────── */
-  const subtotal = useMemo(
-    () => items.reduce((sum, item) => {
-      const qty = localQuantities[item.bookId] ?? item.quantity
-      return sum + getLineTotal(item.price, qty)
-    }, 0),
+  const cartSubtotal = useMemo(
+    () =>
+      items.reduce((sum, item) => {
+        const qty = localQuantities[item.bookId] ?? item.quantity
+        return sum + getLineTotal(item.price, qty)
+      }, 0),
     [items, localQuantities]
+  )
+
+  const selectedItems = useMemo(
+    () => items.filter((item) => selectedKeys.has(item.bookId)),
+    [items, selectedKeys]
+  )
+
+  const selectedSubtotal = useMemo(
+    () =>
+      selectedItems.reduce((sum, item) => {
+        const qty = localQuantities[item.bookId] ?? item.quantity
+        return sum + getLineTotal(item.price, qty)
+      }, 0),
+    [localQuantities, selectedItems]
+  )
+
+  const selectedQuantity = useMemo(
+    () =>
+      selectedItems.reduce(
+        (total, item) => total + (localQuantities[item.bookId] ?? item.quantity),
+        0
+      ),
+    [localQuantities, selectedItems]
   )
 
   const totalQuantity = useMemo(
@@ -269,6 +312,9 @@ export function CartPage() {
                   <Checkbox checked={allSelected} indeterminate={someSelected} onChange={toggleAll}>
                     <strong>{totalQuantity} sản phẩm</strong>
                   </Checkbox>
+                  <Typography.Text type="secondary">
+                    Đã chọn {selectedQuantity} / {totalQuantity}
+                  </Typography.Text>
                   {selectedKeys.size > 0 && (
                     <Popconfirm
                       title={`Xóa ${selectedKeys.size} sản phẩm đã chọn?`}
@@ -411,9 +457,14 @@ export function CartPage() {
             {/* ── Order summary ────────────────────────────── */}
             <Card className="se-card cart-summary-card">
               <Typography.Title level={3}>Tóm tắt đơn hàng</Typography.Title>
+              <Typography.Text type="secondary" className="cart-selected-note">
+                {selectedItems.length > 0
+                  ? `${selectedItems.length} sản phẩm được chọn`
+                  : 'Chọn sản phẩm để thanh toán'}
+              </Typography.Text>
               <div className="cart-summary-row">
                 <span>Tạm tính</span>
-                <strong>{formatPrice(subtotal)}</strong>
+                <strong>{formatPrice(selectedSubtotal)}</strong>
               </div>
               <div className="cart-summary-row">
                 <span>Phí vận chuyển</span>
@@ -422,12 +473,15 @@ export function CartPage() {
               <div className="cart-summary-divider" />
               <div className="cart-summary-total">
                 <span>Tổng cộng</span>
-                <strong>{formatPrice(subtotal)}</strong>
+                <strong>{formatPrice(selectedSubtotal)}</strong>
               </div>
 
-              <Button block type="primary" size="large" disabled>
+              <Button block type="primary" size="large" disabled={selectedItems.length === 0}>
                 Thanh toán
               </Button>
+              <Typography.Paragraph type="secondary" className="cart-checkout-note">
+                Tổng giỏ hàng: {formatPrice(cartSubtotal)}
+              </Typography.Paragraph>
             </Card>
           </div>
         )}

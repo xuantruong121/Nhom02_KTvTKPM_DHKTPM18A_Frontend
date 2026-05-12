@@ -39,7 +39,7 @@ function AdminLayoutImpl() {
 
   const handleLogout = useCallback(async () => {
     await logout()
-    navigate('/auth/login', { replace: true })
+    navigate('/admin/login', { replace: true })
   }, [logout, navigate])
 
   const selectedKeys = useMemo(() => [location.pathname], [location.pathname])
