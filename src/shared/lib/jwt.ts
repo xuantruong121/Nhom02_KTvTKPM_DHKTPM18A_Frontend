@@ -6,6 +6,7 @@
 export type JwtClaims = {
   sub: string
   userId?: number
+  fullName?: string
   role?: string
   permissions?: string[]
   exp?: number
