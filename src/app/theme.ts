@@ -1,17 +1,24 @@
 import type { ThemeConfig } from 'antd'
 
-/** Token màu chính cho website bán sách: xanh hoàng gia + accent tím nhạt. */
 export const antdTheme: ThemeConfig = {
   token: {
-    colorPrimary: '#1d4ed8',
-    colorInfo: '#1d4ed8',
-    colorLink: '#1d4ed8',
+    colorPrimary: '#c92127',
+    colorInfo: '#c92127',
+    colorLink: '#c92127',
+    colorText: '#111827',
+    colorTextSecondary: '#64748b',
+    colorBorder: '#d9d9d9',
+    controlHeight: 44,
+    controlHeightLG: 48,
     borderRadius: 8,
     fontFamily: '"Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
   },
   components: {
-    Button: { controlHeight: 40 },
-    Input: { controlHeight: 40 },
+    Button: { controlHeight: 44, borderRadius: 8 },
+    Card: { borderRadiusLG: 8 },
+    Input: { controlHeight: 44 },
+    InputNumber: { controlHeight: 44 },
+    Select: { controlHeight: 44 },
     Layout: {
       headerBg: '#ffffff',
       headerHeight: 64,

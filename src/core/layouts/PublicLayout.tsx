@@ -72,6 +72,13 @@ function PublicLayoutImpl() {
 
   const goLogin = useCallback(() => navigate('/auth/login'), [navigate])
   const goRegister = useCallback(() => navigate('/auth/register'), [navigate])
+  const handleSearch = useCallback(
+    (value: string) => {
+      const keyword = value.trim()
+      navigate(keyword ? `/books?title=${encodeURIComponent(keyword)}` : '/books')
+    },
+    [navigate]
+  )
 
   const userMenu = useMemo<MenuProps>(
     () => ({
@@ -105,9 +112,9 @@ function PublicLayoutImpl() {
         <div className="public-mega-group" key={group.title}>
           <strong>{group.title}</strong>
           {group.items.map((item) => (
-            <a href="#categories" key={item}>
+            <Link to="/books" key={item}>
               {item}
-            </a>
+            </Link>
           ))}
         </div>
       ))}
@@ -133,12 +140,14 @@ function PublicLayoutImpl() {
             </Button>
           </Popover>
 
-          <Input
+          <Input.Search
             className="public-search"
             size="large"
             prefix={<SearchOutlined />}
             placeholder="Tìm kiếm sách, tác giả, nhà xuất bản..."
+            enterButton="Tìm"
             allowClear
+            onSearch={handleSearch}
           />
 
           <Space className="public-actions" size={14}>
@@ -180,13 +189,14 @@ function PublicLayoutImpl() {
           </Space>
         </div>
         <nav className="public-nav">
-          <a href="#flash-sale">
+          <Link to="/#flash-sale">
             <AppstoreOutlined /> Flash Sale
-          </a>
-          <a href="#featured-categories">Danh mục nổi bật</a>
-          <a href="#shopping-trends">Xu hướng mua sắm</a>
-          <a href="#rankings">Bảng xếp hạng</a>
-          <a href="#brands">Thương hiệu</a>
+          </Link>
+          <Link to="/books">Tất cả sách</Link>
+          <Link to="/#featured-categories">Danh mục nổi bật</Link>
+          <Link to="/#shopping-trends">Xu hướng mua sắm</Link>
+          <Link to="/#rankings">Bảng xếp hạng</Link>
+          <Link to="/#brands">Thương hiệu</Link>
         </nav>
       </Header>
 

@@ -1,0 +1,77 @@
+.catalog-book-card {
+  height: 100%;
+  border-radius: 8px;
+}
+
+.catalog-book-card .ant-card-body {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 12px;
+}
+
+.catalog-book-cover {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 210px;
+  padding: 14px;
+  margin: -12px -12px 12px;
+  background: #f8fafc;
+  color: #94a3b8;
+  font-size: 46px;
+}
+
+.catalog-book-cover .ant-image,
+.catalog-book-cover img {
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.catalog-book-cover img {
+  object-fit: contain;
+}
+
+.catalog-book-title {
+  display: -webkit-box;
+  min-height: 44px;
+  overflow: hidden;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.catalog-book-author {
+  display: block;
+  margin-top: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.catalog-book-price-row {
+  margin-top: 12px;
+}
+
+.catalog-book-price {
+  color: #c92127;
+  font-size: 16px;
+}
+
+.catalog-book-original {
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.catalog-book-meta {
+  margin: 10px 0 12px;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.catalog-book-meta .anticon {
+  color: #f59e0b;
+}
+
+.catalog-book-card .ant-btn {
+  margin-top: auto;
+}
