@@ -72,16 +72,58 @@
 .books-filter-grid {
   display: grid;
   grid-template-columns:
-    minmax(220px, 1.4fr)
-    minmax(160px, 0.8fr)
-    minmax(160px, 0.8fr)
-    minmax(220px, 1.4fr);
-  gap: 16px;
-  align-items: end;
+    minmax(220px, 1fr)
+    minmax(360px, 1.7fr)
+    minmax(220px, 1fr);
+  gap: 24px;
+  align-items: start;
 }
 
 .books-filter-card .ant-card-body {
   padding: 22px 24px 24px;
+}
+
+.books-price-field {
+  gap: 6px;
+}
+
+.books-price-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #1677ff;
+  white-space: nowrap;
+}
+
+.books-price-field .ant-slider {
+  margin: 2px 12px 8px;
+}
+
+.books-price-field .ant-slider-track {
+  background-color: #4b8bf4;
+}
+
+.books-price-field .ant-slider-handle::after {
+  box-shadow: 0 0 0 2px #4b8bf4;
+}
+
+.books-price-inputs {
+  display: grid;
+  grid-template-columns: minmax(112px, 116px) minmax(42px, 1fr) minmax(112px, 116px);
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  width: min(360px, 100%);
+  margin: 0 auto;
+}
+
+.books-price-input {
+  text-align: right;
+}
+
+.books-price-divider {
+  height: 1px;
+  background: #d9d9d9;
 }
 
 .books-skeleton-cover {
@@ -107,6 +149,10 @@
 
   .books-filter-grid {
     grid-template-columns: 1fr;
+  }
+
+  .books-price-label {
+    white-space: normal;
   }
 
   .books-pagination {

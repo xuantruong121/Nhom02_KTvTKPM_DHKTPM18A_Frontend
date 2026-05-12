@@ -1,4 +1,10 @@
-import { AppstoreOutlined, ClearOutlined, FilterOutlined, SearchOutlined } from '@ant-design/icons'
+import {
+  AppstoreOutlined,
+  ClearOutlined,
+  FilterOutlined,
+  SearchOutlined,
+  SlidersOutlined,
+} from '@ant-design/icons'
 import {
   AutoComplete,
   Button,
@@ -12,6 +18,7 @@ import {
   Row,
   Select,
   Skeleton,
+  Slider,
   Space,
   Typography,
 } from 'antd'
@@ -23,6 +30,7 @@ import { useApiQuery } from '@/shared/hooks/useApiQuery'
 import './BooksPage.css'
 
 const PAGE_SIZE_OPTIONS = [8, 12, 16, 24]
+const PRICE_STEP = 5000
 
 function isActive(entity: { active?: boolean; isActive?: boolean }) {
   return entity.active ?? entity.isActive ?? true
@@ -31,6 +39,14 @@ function isActive(entity: { active?: boolean; isActive?: boolean }) {
 function toNumber(value: number | string | null | undefined) {
   if (value === null || value === undefined) return 0
   return typeof value === 'number' ? value : Number(value)
+}
+
+function roundDownPrice(value: number) {
+  return Math.floor(value / PRICE_STEP) * PRICE_STEP
+}
+
+function roundUpPrice(value: number) {
+  return Math.ceil(value / PRICE_STEP) * PRICE_STEP
 }
 
 function matchesText(book: Book, text: string) {
@@ -70,6 +86,18 @@ export function BooksPage() {
     [categoriesQuery.data]
   )
   const books = useMemo(() => (booksQuery.data ?? []).filter(isActive), [booksQuery.data])
+
+  const priceBounds = useMemo(() => {
+    const prices = books.map((book) => toNumber(book.price)).filter((price) => price > 0)
+    if (prices.length === 0) return { min: 0, max: 100000 }
+    return {
+      min: roundDownPrice(Math.min(...prices)),
+      max: roundUpPrice(Math.max(...prices)),
+    }
+  }, [books])
+
+  const effectiveMinPrice = minPrice ?? priceBounds.min
+  const effectiveMaxPrice = maxPrice ?? priceBounds.max
 
   const suggestionOptions = useMemo(() => {
     const keyword = title.trim().toLowerCase()
@@ -213,36 +241,62 @@ export function BooksPage() {
               />
             </div>
 
-            <div className="se-field">
-              <span className="se-field-label">Giá từ</span>
-              <InputNumber
-                value={minPrice}
-                min={0}
-                step={10000}
-                className="books-filter-control se-control"
-                formatter={(value) => `${value ?? ''}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')}
-                parser={(value) => Number(value?.replace(/\./g, '') || 0)}
+            <div className="se-field books-price-field">
+              <span className="se-field-label books-price-label">
+                <SlidersOutlined />
+                Hoặc chọn mức giá phù hợp với bạn
+              </span>
+              <Slider
+                range
+                min={priceBounds.min}
+                max={priceBounds.max}
+                step={PRICE_STEP}
+                value={[effectiveMinPrice, effectiveMaxPrice]}
+                tooltip={{
+                  formatter: (value) => `${Number(value ?? 0).toLocaleString('vi-VN')}đ`,
+                }}
                 onChange={(value) => {
-                  setMinPrice(value)
+                  const [nextMin, nextMax] = value as [number, number]
+                  setMinPrice(nextMin)
+                  setMaxPrice(nextMax)
                   setPage(1)
                 }}
               />
-            </div>
-
-            <div className="se-field">
-              <span className="se-field-label">Giá đến</span>
-              <InputNumber
-                value={maxPrice}
-                min={0}
-                step={10000}
-                className="books-filter-control se-control"
-                formatter={(value) => `${value ?? ''}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')}
-                parser={(value) => Number(value?.replace(/\./g, '') || 0)}
-                onChange={(value) => {
-                  setMaxPrice(value)
-                  setPage(1)
-                }}
-              />
+              <div className="books-price-inputs">
+                <InputNumber
+                  value={effectiveMinPrice}
+                  min={priceBounds.min}
+                  max={effectiveMaxPrice}
+                  step={PRICE_STEP}
+                  className="books-price-input se-control"
+                  formatter={(value) =>
+                    `${value ?? ''}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') + 'đ'
+                  }
+                  parser={(value) => Number(value?.replace(/[^\d]/g, '') || 0)}
+                  onChange={(value) => {
+                    const nextValue = Math.min(Number(value ?? priceBounds.min), effectiveMaxPrice)
+                    setMinPrice(nextValue)
+                    setPage(1)
+                  }}
+                />
+                <span className="books-price-divider" />
+                <InputNumber
+                  value={effectiveMaxPrice}
+                  min={effectiveMinPrice}
+                  max={priceBounds.max}
+                  step={PRICE_STEP}
+                  className="books-price-input se-control"
+                  formatter={(value) =>
+                    `${value ?? ''}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.') + 'đ'
+                  }
+                  parser={(value) => Number(value?.replace(/[^\d]/g, '') || 0)}
+                  onChange={(value) => {
+                    const nextValue = Math.max(Number(value ?? priceBounds.max), effectiveMinPrice)
+                    setMaxPrice(nextValue)
+                    setPage(1)
+                  }}
+                />
+              </div>
             </div>
 
             <div className="se-field">
