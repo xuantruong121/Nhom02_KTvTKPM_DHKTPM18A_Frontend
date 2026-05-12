@@ -68,6 +68,7 @@ function decodeAuthUser(token: string | null): AuthUser | null {
   return {
     userId: typeof claims.userId === 'number' ? claims.userId : null,
     email: claims.sub,
+    fullName: typeof claims.fullName === 'string' ? claims.fullName : undefined,
     role: (claims.role as UserRole) ?? 'GUEST',
     permissions: Array.isArray(claims.permissions) ? claims.permissions : [],
   }

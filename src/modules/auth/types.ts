@@ -22,6 +22,7 @@ export type RegisterRequest = {
 export type AuthUser = {
   userId: number | null
   email: string
+  fullName?: string
   role: UserRole
   permissions: string[]
 }

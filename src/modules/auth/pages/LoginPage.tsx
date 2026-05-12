@@ -62,7 +62,7 @@ export default function LoginPage() {
           <Typography.Text type="secondary">SEBook — chào mừng bạn quay lại</Typography.Text>
         </div>
         {error && (
-          <Alert type="error" title={error} showIcon style={{ marginBottom: 16 }} closable />
+          <Alert type="error" message={error} showIcon style={{ marginBottom: 16 }} closable />
         )}
         <Form<LoginRequest> form={form} layout="vertical" onFinish={handleFinish} autoComplete="off">
           <Form.Item
@@ -95,6 +95,11 @@ export default function LoginPage() {
               autoComplete="current-password"
             />
           </Form.Item>
+          <div style={{ textAlign: 'right', marginBottom: 8, marginTop: -8 }}>
+            <Link to="/auth/forgot-password" style={{ fontSize: 13 }}>
+              Quên mật khẩu?
+            </Link>
+          </div>
           <Button type="primary" htmlType="submit" size="large" block loading={loading}>
             Đăng nhập
           </Button>
