@@ -28,7 +28,7 @@ import {
   Typography,
 } from 'antd'
 import { useMemo, type ReactNode } from 'react'
-import { catalogApi, type Book, type Category } from '@/modules/home/api/catalogApi'
+import { catalogApi, type Book, type Category } from '@/modules/catalog/api/catalogApi'
 import { useApiQuery } from '@/shared/hooks/useApiQuery'
 import './HomePage.css'
 
