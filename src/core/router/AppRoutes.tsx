@@ -12,6 +12,7 @@ import ResetPasswordPage from '@/modules/auth/pages/ResetPasswordPage'
 import ChangePasswordPage from '@/modules/auth/pages/ChangePasswordPage'
 import NotFoundPage from '@/modules/common/pages/NotFoundPage'
 import { HomePage } from '@/modules/home/pages/HomePage'
+import { BookDetailPage } from '@/modules/catalog/pages/BookDetailPage'
 import { BooksPage } from '@/modules/catalog/pages/BooksPage'
 import StaffHomePage from '@/modules/staff/pages/StaffHomePage'
 import ProfilePage from '@/modules/account/pages/ProfilePage'
@@ -30,7 +31,8 @@ export default function AppRoutes() {
       <Route element={<PublicLayout />}>
         <Route index element={<HomePage />} />
         <Route path="/books" element={<BooksPage />} />
-        {/* TODO: /books/:id, /cart, /checkout ... */}
+        <Route path="/books/:id" element={<BookDetailPage />} />
+        {/* TODO: /cart, /checkout ... */}
       </Route>
 
       {/* ─── Profile (user đã đăng nhập) ──────────────────────── */}

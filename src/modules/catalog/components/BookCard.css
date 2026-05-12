@@ -22,6 +22,16 @@
   font-size: 46px;
 }
 
+.catalog-book-link {
+  display: block;
+  color: inherit;
+}
+
+.catalog-book-link:hover {
+  color: inherit;
+  text-decoration: none;
+}
+
 .catalog-book-cover .ant-image,
 .catalog-book-cover img {
   max-width: 100%;

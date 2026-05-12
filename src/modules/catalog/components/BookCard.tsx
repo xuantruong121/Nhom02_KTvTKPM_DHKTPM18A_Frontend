@@ -1,5 +1,6 @@
 import { BookOutlined, ShoppingCartOutlined, StarFilled } from '@ant-design/icons'
 import { Button, Card, Flex, Image, Space, Tag, Typography } from 'antd'
+import { Link } from 'react-router-dom'
 import type { Book } from '@/modules/catalog/api/catalogApi'
 import './BookCard.css'
 
@@ -30,20 +31,22 @@ export function BookCard({ book }: { book: Book }) {
 
   return (
     <Card hoverable className="catalog-book-card">
-      <div className="catalog-book-cover">
-        {book.imageUrl ? (
-          <Image src={book.imageUrl} alt={book.title} preview={false} />
-        ) : (
-          <BookOutlined />
-        )}
-      </div>
+      <Link to={`/books/${book.id}`} className="catalog-book-link">
+        <div className="catalog-book-cover">
+          {book.imageUrl ? (
+            <Image src={book.imageUrl} alt={book.title} preview={false} />
+          ) : (
+            <BookOutlined />
+          )}
+        </div>
 
-      <Typography.Text strong className="catalog-book-title">
-        {book.title}
-      </Typography.Text>
-      <Typography.Text type="secondary" className="catalog-book-author">
-        {book.author || book.publisher || 'SEBook'}
-      </Typography.Text>
+        <Typography.Text strong className="catalog-book-title">
+          {book.title}
+        </Typography.Text>
+        <Typography.Text type="secondary" className="catalog-book-author">
+          {book.author || book.publisher || 'SEBook'}
+        </Typography.Text>
+      </Link>
 
       <Flex align="center" justify="space-between" className="catalog-book-price-row">
         <Space direction="vertical" size={0}>
@@ -66,7 +69,13 @@ export function BookCard({ book }: { book: Book }) {
         <span>{book.quantity > 0 ? `Còn ${book.quantity}` : 'Hết hàng'}</span>
       </Flex>
 
-      <Button block type="primary" icon={<ShoppingCartOutlined />} disabled={book.quantity <= 0}>
+      <Button
+        block
+        type="primary"
+        icon={<ShoppingCartOutlined />}
+        disabled={book.quantity <= 0}
+        onClick={(event) => event.stopPropagation()}
+      >
         Thêm vào giỏ
       </Button>
     </Card>
