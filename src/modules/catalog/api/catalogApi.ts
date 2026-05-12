@@ -41,4 +41,7 @@ export const catalogApi = {
   getBooks(params?: BookSearchParams) {
     return unwrapApi<Book[]>(http.get('/catalog/books', { params }))
   },
+  getBook(id: number) {
+    return unwrapApi<Book>(http.get(`/catalog/books/${id}`))
+  },
 }

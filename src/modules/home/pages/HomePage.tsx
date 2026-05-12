@@ -28,6 +28,7 @@ import {
   Typography,
 } from 'antd'
 import { useMemo, type ReactNode } from 'react'
+import { Link } from 'react-router-dom'
 import { catalogApi, type Book, type Category } from '@/modules/catalog/api/catalogApi'
 import { useApiQuery } from '@/shared/hooks/useApiQuery'
 import './HomePage.css'
@@ -168,19 +169,21 @@ function ProductCard({ book, compact = false }: { book: Book; compact?: boolean 
 
   return (
     <Card hoverable className={compact ? 'home-product-card compact' : 'home-product-card'}>
-      <div className="home-product-cover">
-        {book.imageUrl ? (
-          <Image src={book.imageUrl} alt={book.title} preview={false} />
-        ) : (
-          <BookOutlined />
-        )}
-      </div>
-      <Typography.Text strong className="home-product-title">
-        {book.title}
-      </Typography.Text>
-      <Typography.Text type="secondary" className="home-product-author">
-        {book.author || book.publisher || 'SEBook'}
-      </Typography.Text>
+      <Link to={`/books/${book.id}`} className="home-product-link">
+        <div className="home-product-cover">
+          {book.imageUrl ? (
+            <Image src={book.imageUrl} alt={book.title} preview={false} />
+          ) : (
+            <BookOutlined />
+          )}
+        </div>
+        <Typography.Text strong className="home-product-title">
+          {book.title}
+        </Typography.Text>
+        <Typography.Text type="secondary" className="home-product-author">
+          {book.author || book.publisher || 'SEBook'}
+        </Typography.Text>
+      </Link>
       <Flex align="center" justify="space-between" className="home-product-price-row">
         <div>
           <Typography.Text strong className="home-product-price">
@@ -210,7 +213,7 @@ function RankingList({ books }: { books: Book[] }) {
   return (
     <div className="home-ranking-list">
       {books.slice(0, 6).map((book, index) => (
-        <div className="home-ranking-item" key={book.id}>
+        <Link to={`/books/${book.id}`} className="home-ranking-item" key={book.id}>
           <span className="home-rank-number">{index + 1}</span>
           <div className="home-rank-cover">
             {book.imageUrl ? <img src={book.imageUrl} alt={book.title} /> : <BookOutlined />}
@@ -220,7 +223,7 @@ function RankingList({ books }: { books: Book[] }) {
             <span>{book.author || book.publisher || 'SEBook'}</span>
             <b>{formatPrice(book.price)}</b>
           </div>
-        </div>
+        </Link>
       ))}
     </div>
   )
