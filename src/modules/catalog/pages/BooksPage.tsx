@@ -1,11 +1,6 @@
+import { AppstoreOutlined, ClearOutlined, FilterOutlined, SearchOutlined } from '@ant-design/icons'
 import {
-  AppstoreOutlined,
-  ClearOutlined,
-  FilterOutlined,
-  SearchOutlined,
-  SortAscendingOutlined,
-} from '@ant-design/icons'
-import {
+  AutoComplete,
   Button,
   Card,
   Col,
@@ -63,6 +58,9 @@ export function BooksPage() {
   const selectedCategoryId = categoryId === 'all' ? undefined : Number(categoryId)
 
   const categoriesQuery = useApiQuery(['catalog', 'categories'], () => catalogApi.getCategories())
+  const suggestionsQuery = useApiQuery(['catalog', 'books', 'suggestions'], () =>
+    catalogApi.getBooks()
+  )
   const booksQuery = useApiQuery(['catalog', 'books', submittedTitle, selectedCategoryId], () =>
     catalogApi.getBooks({ title: submittedTitle || undefined, categoryId: selectedCategoryId })
   )
@@ -72,6 +70,25 @@ export function BooksPage() {
     [categoriesQuery.data]
   )
   const books = useMemo(() => (booksQuery.data ?? []).filter(isActive), [booksQuery.data])
+
+  const suggestionOptions = useMemo(() => {
+    const keyword = title.trim().toLowerCase()
+    if (!keyword) return []
+
+    return (suggestionsQuery.data ?? [])
+      .filter(isActive)
+      .filter((book) => matchesText(book, keyword))
+      .slice(0, 8)
+      .map((book) => ({
+        value: book.title,
+        label: (
+          <div className="books-suggestion">
+            <strong>{book.title}</strong>
+            <span>{book.author || book.publisher || 'SEBook'}</span>
+          </div>
+        ),
+      }))
+  }, [suggestionsQuery.data, title])
 
   const filteredBooks = useMemo(() => {
     const result = books.filter((book) => {
@@ -148,21 +165,28 @@ export function BooksPage() {
             Tìm kiếm, lọc danh mục và duyệt danh sách sách đang có trong hệ thống SEBook.
           </Typography.Paragraph>
         </div>
-        <Input.Search
-          size="large"
+        <AutoComplete
+          className="books-search-autocomplete"
           value={title}
-          allowClear
-          enterButton="Tìm sách"
-          prefix={<SearchOutlined />}
-          placeholder="Tên sách, tác giả, nhà xuất bản hoặc ISBN"
-          onChange={(event) => setTitle(event.target.value)}
-          onSearch={handleSearch}
-        />
+          options={suggestionOptions}
+          onChange={setTitle}
+          onSelect={(value) => handleSearch(value)}
+        >
+          <Input.Search
+            className="se-control"
+            size="large"
+            allowClear
+            enterButton="Tìm sách"
+            prefix={<SearchOutlined />}
+            placeholder="Tên sách, tác giả, nhà xuất bản hoặc ISBN"
+            onSearch={handleSearch}
+          />
+        </AutoComplete>
       </section>
 
       <section className="books-page-shell">
-        <Card className="books-filter-card">
-          <Flex align="center" justify="space-between" className="books-filter-title">
+        <Card className="books-filter-card se-card">
+          <Flex align="center" justify="space-between" className="books-filter-title se-toolbar">
             <Space>
               <FilterOutlined />
               <strong>Bộ lọc</strong>
@@ -172,13 +196,13 @@ export function BooksPage() {
             </Button>
           </Flex>
 
-          <Row gutter={[14, 14]}>
-            <Col xs={24} md={8}>
-              <Typography.Text type="secondary">Danh mục</Typography.Text>
+          <div className="books-filter-grid">
+            <div className="se-field">
+              <span className="se-field-label">Danh mục</span>
               <Select
                 value={categoryId}
                 onChange={handleCategoryChange}
-                className="books-filter-control"
+                className="books-filter-control se-control"
                 options={[
                   { value: 'all', label: 'Tất cả danh mục' },
                   ...categories.map((category) => ({
@@ -187,14 +211,15 @@ export function BooksPage() {
                   })),
                 ]}
               />
-            </Col>
-            <Col xs={12} md={4}>
-              <Typography.Text type="secondary">Giá từ</Typography.Text>
+            </div>
+
+            <div className="se-field">
+              <span className="se-field-label">Giá từ</span>
               <InputNumber
                 value={minPrice}
                 min={0}
                 step={10000}
-                className="books-filter-control"
+                className="books-filter-control se-control"
                 formatter={(value) => `${value ?? ''}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')}
                 parser={(value) => Number(value?.replace(/\./g, '') || 0)}
                 onChange={(value) => {
@@ -202,14 +227,15 @@ export function BooksPage() {
                   setPage(1)
                 }}
               />
-            </Col>
-            <Col xs={12} md={4}>
-              <Typography.Text type="secondary">Giá đến</Typography.Text>
+            </div>
+
+            <div className="se-field">
+              <span className="se-field-label">Giá đến</span>
               <InputNumber
                 value={maxPrice}
                 min={0}
                 step={10000}
-                className="books-filter-control"
+                className="books-filter-control se-control"
                 formatter={(value) => `${value ?? ''}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')}
                 parser={(value) => Number(value?.replace(/\./g, '') || 0)}
                 onChange={(value) => {
@@ -217,17 +243,17 @@ export function BooksPage() {
                   setPage(1)
                 }}
               />
-            </Col>
-            <Col xs={24} md={8}>
-              <Typography.Text type="secondary">Sắp xếp</Typography.Text>
+            </div>
+
+            <div className="se-field">
+              <span className="se-field-label">Sắp xếp</span>
               <Select
                 value={sort}
                 onChange={(value) => {
                   setSort(value)
                   setPage(1)
                 }}
-                className="books-filter-control"
-                suffixIcon={<SortAscendingOutlined />}
+                className="books-filter-control se-control"
                 options={[
                   { value: 'relevance', label: 'Liên quan nhất' },
                   { value: 'priceAsc', label: 'Giá thấp đến cao' },
@@ -236,11 +262,11 @@ export function BooksPage() {
                   { value: 'newest', label: 'Năm xuất bản mới' },
                 ]}
               />
-            </Col>
-          </Row>
+            </div>
+          </div>
         </Card>
 
-        <Card className="books-result-card">
+        <Card className="books-result-card se-card">
           <Flex align="center" justify="space-between" className="books-result-header">
             <Space>
               <AppstoreOutlined />
