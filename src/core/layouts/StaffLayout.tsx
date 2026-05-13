@@ -1,8 +1,9 @@
 import {
   AppstoreOutlined,
+  AuditOutlined,
   InboxOutlined,
   LogoutOutlined,
-  ShoppingOutlined,
+  StockOutlined,
   UserOutlined,
 } from '@ant-design/icons'
 import { Avatar, Layout, Menu, Space, Tag, Typography } from 'antd'
@@ -15,16 +16,21 @@ import { useUIStore } from '@/shared/store/uiStore'
 const { Sider, Header, Content } = Layout
 
 const MENU_ITEMS: MenuProps['items'] = [
-  { key: '/staff', icon: <AppstoreOutlined />, label: <Link to="/staff">Tổng quan</Link> },
+  { key: '/staff', icon: <AppstoreOutlined />, label: <Link to="/staff">Tong quan</Link> },
   {
-    key: '/staff/orders',
-    icon: <ShoppingOutlined />,
-    label: <Link to="/staff/orders">Đơn hàng</Link>,
+    key: '/staff/returns',
+    icon: <AuditOutlined />,
+    label: <Link to="/staff/returns">Tra hang</Link>,
   },
   {
     key: '/staff/purchase-orders',
     icon: <InboxOutlined />,
-    label: <Link to="/staff/purchase-orders">PO Mua hàng</Link>,
+    label: <Link to="/staff/purchase-orders">PO mua hang</Link>,
+  },
+  {
+    key: '/staff/stock-check',
+    icon: <StockOutlined />,
+    label: <Link to="/staff/stock-check">Kiem kho</Link>,
   },
 ]
 
@@ -41,27 +47,19 @@ function StaffLayoutImpl() {
     navigate('/staff/login', { replace: true })
   }, [logout, navigate])
 
-  const selectedKeys = useMemo(() => [location.pathname], [location.pathname])
+  const selectedKeys = useMemo(() => {
+    const match = MENU_ITEMS?.find((item) => {
+      if (!item || !('key' in item) || typeof item.key !== 'string') return false
+      return item.key !== '/staff' && location.pathname.startsWith(item.key)
+    })
+    return [match && 'key' in match ? String(match.key) : '/staff']
+  }, [location.pathname])
   const roleTagColor = user?.role === 'STAFF_WAREHOUSE' ? 'gold' : 'blue'
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      <Sider
-        theme="light"
-        breakpoint="lg"
-        collapsible
-        collapsed={collapsed}
-        onCollapse={setCollapsed}
-      >
-        <div
-          style={{
-            fontWeight: 700,
-            padding: '16px 24px',
-            fontSize: 18,
-            letterSpacing: 1,
-            color: '#1d4ed8',
-          }}
-        >
+      <Sider theme="light" breakpoint="lg" collapsible collapsed={collapsed} onCollapse={setCollapsed}>
+        <div style={{ fontWeight: 700, padding: '16px 24px', fontSize: 18, color: '#1d4ed8' }}>
           {collapsed ? 'SB' : 'SEBook Staff'}
         </div>
         <Menu mode="inline" selectedKeys={selectedKeys} items={MENU_ITEMS} />
@@ -83,7 +81,7 @@ function StaffLayoutImpl() {
             <Typography.Text strong>{user?.email}</Typography.Text>
             <Tag color={roleTagColor}>{user?.role}</Tag>
             <Typography.Link onClick={handleLogout}>
-              <LogoutOutlined /> Đăng xuất
+              <LogoutOutlined /> Dang xuat
             </Typography.Link>
           </Space>
         </Header>
