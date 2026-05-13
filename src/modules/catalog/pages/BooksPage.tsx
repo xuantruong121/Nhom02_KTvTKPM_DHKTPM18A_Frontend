@@ -14,7 +14,7 @@ import {
   Space,
   Typography,
 } from 'antd'
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { catalogApi, type Book } from '@/modules/catalog/api/catalogApi'
 import { BookCard } from '@/modules/catalog/components/BookCard'
@@ -51,25 +51,14 @@ function matchesText(book: Book, text: string) {
 
 export function BooksPage() {
   const [searchParams, setSearchParams] = useSearchParams()
-  const initialTitle = searchParams.get('title') ?? ''
-  const initialCategory = searchParams.get('categoryId') ?? 'all'
+  const submittedTitle = searchParams.get('title') ?? ''
+  const categoryId = searchParams.get('categoryId') ?? 'all'
 
-  const [submittedTitle, setSubmittedTitle] = useState(initialTitle)
-  const [categoryId, setCategoryId] = useState(initialCategory)
   const [minPrice, setMinPrice] = useState<number | null>(null)
   const [maxPrice, setMaxPrice] = useState<number | null>(null)
   const [sort, setSort] = useState('relevance')
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(12)
-
-  // Sync state when URL search params change (e.g. navigating from header search)
-  useEffect(() => {
-    const nextTitle = searchParams.get('title') ?? ''
-    const nextCategory = searchParams.get('categoryId') ?? 'all'
-    setSubmittedTitle(nextTitle)
-    setCategoryId(nextCategory)
-    setPage(1)
-  }, [searchParams])
 
   const selectedCategoryId = categoryId === 'all' ? undefined : Number(categoryId)
 
@@ -116,7 +105,9 @@ export function BooksPage() {
   }, [books, maxPrice, minPrice, sort, submittedTitle])
 
   const pagedBooks = useMemo(() => {
-    const start = (page - 1) * pageSize
+    const totalPages = Math.ceil(filteredBooks.length / pageSize) || 1
+    const safePage = Math.min(page, totalPages)
+    const start = (safePage - 1) * pageSize
     return filteredBooks.slice(start, start + pageSize)
   }, [filteredBooks, page, pageSize])
 
@@ -124,7 +115,6 @@ export function BooksPage() {
   const hasError = categoriesQuery.isError || booksQuery.isError
 
   const handleCategoryChange = (value: string) => {
-    setCategoryId(value)
     setPage(1)
     setSearchParams((prev) => {
       const next = new URLSearchParams(prev)
@@ -137,8 +127,6 @@ export function BooksPage() {
   }
 
   const clearFilters = () => {
-    setSubmittedTitle('')
-    setCategoryId('all')
     setMinPrice(null)
     setMaxPrice(null)
     setSort('relevance')
@@ -263,7 +251,7 @@ export function BooksPage() {
               <strong>{filteredBooks.length} sách phù hợp</strong>
             </Space>
             <Typography.Text type="secondary">
-              Trang {filteredBooks.length === 0 ? 0 : page} /{' '}
+              Trang {filteredBooks.length === 0 ? 0 : Math.min(page, Math.ceil(filteredBooks.length / pageSize) || 1)} /{' '}
               {Math.ceil(filteredBooks.length / pageSize) || 0}
             </Typography.Text>
           </Flex>
@@ -295,7 +283,7 @@ export function BooksPage() {
 
           <Pagination
             className="books-pagination"
-            current={page}
+            current={Math.min(page, Math.ceil(filteredBooks.length / pageSize) || 1)}
             pageSize={pageSize}
             total={filteredBooks.length}
             pageSizeOptions={PAGE_SIZE_OPTIONS}

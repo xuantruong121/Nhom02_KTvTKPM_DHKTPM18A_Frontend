@@ -96,7 +96,7 @@ export function CheckoutPage() {
   const profileQuery = useApiQuery(['account', 'profile'], () => accountApi.getProfile())
   const booksQuery = useApiQuery(['catalog', 'books', 'checkout'], () => catalogApi.getBooks())
 
-  const items = cartQuery.data?.items ?? []
+  const items = useMemo(() => cartQuery.data?.items ?? [], [cartQuery.data?.items])
   const booksById = useMemo(
     () => new Map((booksQuery.data ?? []).map((book) => [book.id, book])),
     [booksQuery.data]
