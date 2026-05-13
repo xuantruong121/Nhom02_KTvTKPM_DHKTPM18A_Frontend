@@ -1,4 +1,4 @@
-import { http, httpV2, unwrapApi } from '@/shared/api/http'
+import { http, unwrapApi } from '@/shared/api/http'
 
 export type Money = number | string
 
@@ -245,10 +245,13 @@ export const adminApi = {
     return unwrapApi<DashboardMetrics>(http.get('/admin/dashboard/metrics'))
   },
   getOrders(params?: OrderFilters) {
-    return unwrapApi<AdminOrder[]>(httpV2.get('/admin/orders', { params }))
+    return unwrapApi<AdminOrder[]>(http.get('/admin/orders', { params }))
   },
   getOrder(id: number) {
-    return unwrapApi<AdminOrder>(httpV2.get(`/admin/orders/${id}`))
+    return unwrapApi<AdminOrder>(http.get(`/admin/orders/${id}`))
+  },
+  updateOrderStatus(id: number, newStatus: FulfillmentStatus, reason?: string) {
+    return unwrapApi<AdminOrder>(http.put(`/admin/orders/${id}/status`, { newStatus, reason }))
   },
   processOrder(id: number) {
     return unwrapApi<AdminOrder>(http.put(`/admin/orders/${id}/process`))

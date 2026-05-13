@@ -17,7 +17,9 @@ export default function AdminBooksPage() {
   const [editingBook, setEditingBook] = useState<AdminBook | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
 
-  const booksQuery = useApiQuery(['admin', 'books'], () => adminApi.getBooks())
+  const booksQuery = useApiQuery(['admin', 'books'], () => adminApi.getBooks(), {
+    refetchInterval: 5_000,
+  })
   const categoriesQuery = useApiQuery(['admin', 'bookCategories'], () => adminApi.getCategories())
 
   const saveMutation = useApiMutation(

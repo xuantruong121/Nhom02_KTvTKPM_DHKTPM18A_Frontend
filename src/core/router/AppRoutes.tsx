@@ -30,6 +30,7 @@ import { OrderDetailPage } from '@/modules/order/pages/OrderDetailPage'
 import { PaymentResultPage } from '@/modules/order/pages/PaymentResultPage'
 import { MyReturnsPage } from '@/modules/returns/pages/MyReturnsPage'
 import StaffHomePage from '@/modules/staff/pages/StaffHomePage'
+import StaffPurchaseOrderDetailPage from '@/modules/staff/pages/StaffPurchaseOrderDetailPage'
 import StaffPurchaseOrdersPage from '@/modules/staff/pages/StaffPurchaseOrdersPage'
 import StaffReturnRequestsPage from '@/modules/staff/pages/StaffReturnRequestsPage'
 import StaffStockCheckPage from '@/modules/staff/pages/StaffStockCheckPage'
@@ -153,6 +154,7 @@ export default function AppRoutes() {
         <Route path="users" element={<AdminUsersPage />} />
         <Route path="suppliers" element={<AdminSuppliersPage />} />
         <Route path="purchase-orders" element={<StaffPurchaseOrdersPage />} />
+        <Route path="purchase-orders/:id" element={<StaffPurchaseOrderDetailPage />} />
         <Route path="stock-check" element={<StaffStockCheckPage />} />
         <Route path="books" element={<AdminBooksPage />} />
         <Route path="inventory" element={<AdminImportStocksPage />} />
@@ -168,9 +170,54 @@ export default function AppRoutes() {
         }
       >
         <Route index element={<StaffHomePage />} />
-        <Route path="returns" element={<StaffReturnRequestsPage />} />
-        <Route path="purchase-orders" element={<StaffPurchaseOrdersPage />} />
-        <Route path="stock-check" element={<StaffStockCheckPage />} />
+        <Route
+          path="orders"
+          element={
+            <RoleRoute allowed={['STAFF_SELLER']} loginPath="/staff/login">
+              <AdminOrdersPage />
+            </RoleRoute>
+          }
+        />
+        <Route
+          path="orders/:id"
+          element={
+            <RoleRoute allowed={['STAFF_SELLER']} loginPath="/staff/login">
+              <AdminOrderDetailPage />
+            </RoleRoute>
+          }
+        />
+        <Route
+          path="returns"
+          element={
+            <RoleRoute allowed={['STAFF_SELLER']} loginPath="/staff/login">
+              <StaffReturnRequestsPage />
+            </RoleRoute>
+          }
+        />
+        <Route
+          path="purchase-orders"
+          element={
+            <RoleRoute allowed={['STAFF_WAREHOUSE']} loginPath="/staff/login">
+              <StaffPurchaseOrdersPage />
+            </RoleRoute>
+          }
+        />
+        <Route
+          path="purchase-orders/:id"
+          element={
+            <RoleRoute allowed={['STAFF_WAREHOUSE']} loginPath="/staff/login">
+              <StaffPurchaseOrderDetailPage />
+            </RoleRoute>
+          }
+        />
+        <Route
+          path="stock-check"
+          element={
+            <RoleRoute allowed={['STAFF_WAREHOUSE']} loginPath="/staff/login">
+              <StaffStockCheckPage />
+            </RoleRoute>
+          }
+        />
       </Route>
 
       <Route path="/404" element={<NotFoundPage />} />

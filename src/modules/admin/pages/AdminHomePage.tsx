@@ -8,7 +8,9 @@ function money(value: number | string | undefined) {
 }
 
 export default function AdminHomePage() {
-  const metricsQuery = useApiQuery(['admin', 'dashboard'], () => adminApi.getDashboard())
+  const metricsQuery = useApiQuery(['admin', 'dashboard'], () => adminApi.getDashboard(), {
+    refetchInterval: 5_000,
+  })
   const metrics = metricsQuery.data
 
   const columns: ColumnsType<TopBook> = [

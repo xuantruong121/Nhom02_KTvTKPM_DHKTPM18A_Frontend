@@ -1,6 +1,6 @@
 import { Button, Card, Input, Select, Space, Table, Tag, Typography } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { useState } from 'react'
 import {
   adminApi,
@@ -23,9 +23,11 @@ function money(value: number | string) {
 }
 
 export default function AdminOrdersPage() {
+  const location = useLocation()
   const [status, setStatus] = useState<FulfillmentStatus | undefined>()
   const [keyword, setKeyword] = useState('')
   const [submittedKeyword, setSubmittedKeyword] = useState('')
+  const ordersBasePath = location.pathname.startsWith('/staff') ? '/staff/orders' : '/admin/orders'
 
   const ordersQuery = useApiQuery(['admin', 'orders', status, submittedKeyword], () =>
     adminApi.getOrders({ status, customerKeyword: submittedKeyword || undefined })
@@ -53,7 +55,7 @@ export default function AdminOrdersPage() {
     {
       title: '',
       render: (_, order) => (
-        <Link to={`/admin/orders/${order.orderId}`}>
+        <Link to={`${ordersBasePath}/${order.orderId}`}>
           <Button type="link">Chi tiết</Button>
         </Link>
       ),
