@@ -16,8 +16,12 @@ export default function AdminImportStocksPage() {
   const { message } = App.useApp()
   const queryClient = useQueryClient()
   const [amounts, setAmounts] = useState<Record<number, number>>({})
-  const inventoryQuery = useApiQuery(['admin', 'inventory'], () => adminApi.getInventory())
-  const booksQuery = useApiQuery(['admin', 'books'], () => adminApi.getBooks())
+  const inventoryQuery = useApiQuery(['admin', 'inventory'], () => adminApi.getInventory(), {
+    refetchInterval: 5_000,
+  })
+  const booksQuery = useApiQuery(['admin', 'books'], () => adminApi.getBooks(), {
+    refetchInterval: 5_000,
+  })
 
   const bookById = useMemo(
     () => new Map((booksQuery.data ?? []).map((book) => [book.id, book])),

@@ -2,7 +2,7 @@ import { App, Button, Card, Descriptions, Input, Space, Table, Tag, Typography }
 import type { ColumnsType } from 'antd/es/table'
 import { useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useLocation, useParams } from 'react-router-dom'
 import { adminApi, type AdminOrder, type OrderItem } from '@/modules/admin/api/adminApi'
 import { invalidateAdminOrderCaches } from '@/modules/admin/utils/invalidateAdminCaches'
 import { useApiMutation, useApiQuery } from '@/shared/hooks/useApiQuery'
@@ -14,9 +14,11 @@ function money(value: number | string | undefined) {
 export default function AdminOrderDetailPage() {
   const { message } = App.useApp()
   const queryClient = useQueryClient()
+  const location = useLocation()
   const params = useParams()
   const orderId = Number(params.id)
   const [cancelReason, setCancelReason] = useState('')
+  const ordersBasePath = location.pathname.startsWith('/staff') ? '/staff/orders' : '/admin/orders'
 
   const orderQuery = useApiQuery(['admin', 'orders', orderId], () => adminApi.getOrder(orderId), {
     enabled: Number.isFinite(orderId),
@@ -27,7 +29,8 @@ export default function AdminOrderDetailPage() {
   }
 
   const actionMutation = useApiMutation(
-    (action: 'process' | 'ship' | 'complete' | 'cancel') => {
+    (action: 'confirm' | 'process' | 'ship' | 'complete' | 'cancel') => {
+      if (action === 'confirm') return adminApi.updateOrderStatus(orderId, 'CONFIRMED', 'Admin xác nhận đơn hàng')
       if (action === 'process') return adminApi.processOrder(orderId)
       if (action === 'ship') return adminApi.shipOrder(orderId)
       if (action === 'complete') return adminApi.completeOrder(orderId)
@@ -54,7 +57,7 @@ export default function AdminOrderDetailPage() {
   return (
     <Space direction="vertical" size="large" style={{ width: '100%' }}>
       <Space>
-        <Link to="/admin/orders">
+        <Link to={ordersBasePath}>
           <Button>Quay lại</Button>
         </Link>
         <Typography.Title level={3} style={{ margin: 0 }}>
@@ -129,7 +132,10 @@ function getActions(order?: AdminOrder) {
     ]
   }
   if (order.fulfillmentStatus === 'PENDING') {
-    return [{ value: 'cancel' as const, label: 'Hủy' }]
+    return [
+      { value: 'confirm' as const, label: 'Xác nhận' },
+      { value: 'cancel' as const, label: 'Hủy' },
+    ]
   }
   return []
 }

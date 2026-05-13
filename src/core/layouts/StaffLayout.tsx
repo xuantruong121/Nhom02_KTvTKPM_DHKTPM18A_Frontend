@@ -3,6 +3,7 @@ import {
   AuditOutlined,
   InboxOutlined,
   LogoutOutlined,
+  ProfileOutlined,
   StockOutlined,
   UserOutlined,
 } from '@ant-design/icons'
@@ -14,25 +15,8 @@ import { useAuthStore, useAuthUser } from '@/shared/store/authStore'
 import { useUIStore } from '@/shared/store/uiStore'
 
 const { Sider, Header, Content } = Layout
-
-const MENU_ITEMS: MenuProps['items'] = [
-  { key: '/staff', icon: <AppstoreOutlined />, label: <Link to="/staff">Tong quan</Link> },
-  {
-    key: '/staff/returns',
-    icon: <AuditOutlined />,
-    label: <Link to="/staff/returns">Tra hang</Link>,
-  },
-  {
-    key: '/staff/purchase-orders',
-    icon: <InboxOutlined />,
-    label: <Link to="/staff/purchase-orders">PO mua hang</Link>,
-  },
-  {
-    key: '/staff/stock-check',
-    icon: <StockOutlined />,
-    label: <Link to="/staff/stock-check">Kiem kho</Link>,
-  },
-]
+const SIDER_WIDTH = 200
+const SIDER_COLLAPSED_WIDTH = 80
 
 function StaffLayoutImpl() {
   const user = useAuthUser()
@@ -47,24 +31,78 @@ function StaffLayoutImpl() {
     navigate('/staff/login', { replace: true })
   }, [logout, navigate])
 
+  const menuItems = useMemo<MenuProps['items']>(() => {
+    const items: MenuProps['items'] = [
+      { key: '/staff', icon: <AppstoreOutlined />, label: <Link to="/staff">Tong quan</Link> },
+    ]
+
+    if (user?.role === 'STAFF_SELLER') {
+      items.push(
+        {
+          key: '/staff/orders',
+          icon: <ProfileOutlined />,
+          label: <Link to="/staff/orders">Don hang</Link>,
+        },
+        {
+          key: '/staff/returns',
+          icon: <AuditOutlined />,
+          label: <Link to="/staff/returns">Tra hang</Link>,
+        }
+      )
+    }
+
+    if (user?.role === 'STAFF_WAREHOUSE') {
+      items.push(
+        {
+          key: '/staff/purchase-orders',
+          icon: <InboxOutlined />,
+          label: <Link to="/staff/purchase-orders">PO mua hang</Link>,
+        },
+        {
+          key: '/staff/stock-check',
+          icon: <StockOutlined />,
+          label: <Link to="/staff/stock-check">Kiem kho</Link>,
+        }
+      )
+    }
+
+    return items
+  }, [user?.role])
+
   const selectedKeys = useMemo(() => {
-    const match = MENU_ITEMS?.find((item) => {
+    const match = menuItems?.find((item) => {
       if (!item || !('key' in item) || typeof item.key !== 'string') return false
       return item.key !== '/staff' && location.pathname.startsWith(item.key)
     })
     return [match && 'key' in match ? String(match.key) : '/staff']
-  }, [location.pathname])
+  }, [location.pathname, menuItems])
   const roleTagColor = user?.role === 'STAFF_WAREHOUSE' ? 'gold' : 'blue'
+  const siderWidth = collapsed ? SIDER_COLLAPSED_WIDTH : SIDER_WIDTH
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      <Sider theme="light" breakpoint="lg" collapsible collapsed={collapsed} onCollapse={setCollapsed}>
-        <div style={{ fontWeight: 700, padding: '16px 24px', fontSize: 18, color: '#1d4ed8' }}>
+      <Sider
+        theme="dark"
+        breakpoint="lg"
+        collapsible
+        collapsed={collapsed}
+        onCollapse={setCollapsed}
+        style={{
+          position: 'fixed',
+          insetInlineStart: 0,
+          top: 0,
+          bottom: 0,
+          height: '100vh',
+          overflow: 'auto',
+          zIndex: 100,
+        }}
+      >
+        <div style={{ color: '#fff', fontWeight: 700, padding: '16px 24px', fontSize: 18 }}>
           {collapsed ? 'SB' : 'SEBook Staff'}
         </div>
-        <Menu mode="inline" selectedKeys={selectedKeys} items={MENU_ITEMS} />
+        <Menu theme="dark" mode="inline" selectedKeys={selectedKeys} items={menuItems} />
       </Sider>
-      <Layout>
+      <Layout style={{ marginLeft: siderWidth, transition: 'margin-left 0.2s' }}>
         <Header
           style={{
             background: '#fff',

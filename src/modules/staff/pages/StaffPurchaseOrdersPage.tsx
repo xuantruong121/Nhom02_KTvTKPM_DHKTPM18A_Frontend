@@ -2,6 +2,7 @@ import { App, Button, Card, Form, Input, InputNumber, Modal, Select, Space, Tabl
 import type { ColumnsType } from 'antd/es/table'
 import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import {
   adminApi,
   type PurchaseOrder,
@@ -58,7 +59,12 @@ export default function StaffPurchaseOrdersPage() {
   )
 
   const columns: ColumnsType<PurchaseOrder> = [
-    { title: 'Mã PO', dataIndex: 'id', width: 100 },
+    {
+      title: 'Mã PO',
+      dataIndex: 'id',
+      render: (id: number) => <Link to={`${id}`}>#{id}</Link>,
+      width: 100,
+    },
     { title: 'Nhà cung cấp', render: (_, po) => po.supplier?.name ?? '-', width: 220 },
     {
       title: 'Trạng thái',
@@ -80,6 +86,11 @@ export default function StaffPurchaseOrdersPage() {
               {action}
             </Button>
           ))}
+          <Link to={`${po.id}`}>
+            <Button size="small" type="link">
+              Chi tiet
+            </Button>
+          </Link>
         </Space>
       ),
       width: 300,

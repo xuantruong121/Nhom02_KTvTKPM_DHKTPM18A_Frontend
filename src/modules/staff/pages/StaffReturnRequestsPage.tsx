@@ -23,6 +23,12 @@ export default function StaffReturnRequestsPage() {
   const [reason, setReason] = useState('')
   const [conditions, setConditions] = useState<ItemCondition[]>(['GOOD'])
 
+  const openAction = (request: ReturnRequest, action: ReturnAction) => {
+    setActive({ request, action })
+    setReason('')
+    setConditions(Array.from({ length: Math.max(request.items?.length ?? 1, 1) }, () => 'GOOD'))
+  }
+
   const actionMutation = useApiMutation(
     async () => {
       if (!active) return
@@ -57,16 +63,16 @@ export default function StaffReturnRequestsPage() {
       title: 'Thao tác',
       render: (_, request) => (
         <Space wrap>
-          <Button size="small" onClick={() => setActive({ request, action: 'approve' })}>
+          <Button size="small" disabled={request.status !== 'PENDING'} onClick={() => openAction(request, 'approve')}>
             Duyệt
           </Button>
-          <Button size="small" onClick={() => setActive({ request, action: 'receive' })}>
+          <Button size="small" disabled={request.status !== 'APPROVED'} onClick={() => openAction(request, 'receive')}>
             Đã nhận
           </Button>
-          <Button size="small" onClick={() => setActive({ request, action: 'refund' })}>
+          <Button size="small" disabled={request.status !== 'RECEIVED'} onClick={() => openAction(request, 'refund')}>
             Hoàn tiền
           </Button>
-          <Button size="small" danger onClick={() => setActive({ request, action: 'reject' })}>
+          <Button size="small" danger disabled={request.status === 'REFUNDED'} onClick={() => openAction(request, 'reject')}>
             Từ chối
           </Button>
         </Space>
@@ -95,13 +101,26 @@ export default function StaffReturnRequestsPage() {
           <Input.TextArea rows={3} placeholder="Lý do từ chối" value={reason} onChange={(event) => setReason(event.target.value)} />
         ) : null}
         {active?.action === 'receive' ? (
-          <Select
-            mode="multiple"
-            style={{ width: '100%' }}
-            value={conditions}
-            onChange={setConditions}
-            options={CONDITIONS.map((condition) => ({ value: condition, label: condition }))}
-          />
+          <Space direction="vertical" style={{ width: '100%' }}>
+            {active.request.items?.map((item, index) => (
+              <Select
+                key={item.id ?? `${item.bookId}-${index}`}
+                style={{ width: '100%' }}
+                value={conditions[index] ?? 'GOOD'}
+                onChange={(value) =>
+                  setConditions((prev) => {
+                    const next = [...prev]
+                    next[index] = value
+                    return next
+                  })
+                }
+                options={CONDITIONS.map((condition) => ({
+                  value: condition,
+                  label: `Book #${item.bookId} x${item.quantity} - ${condition}`,
+                }))}
+              />
+            ))}
+          </Space>
         ) : null}
       </Modal>
     </Space>
