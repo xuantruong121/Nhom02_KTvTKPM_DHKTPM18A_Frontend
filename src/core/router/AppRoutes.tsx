@@ -5,6 +5,15 @@ import StaffLayout from '@/core/layouts/StaffLayout'
 import ProtectedRoute from '@/core/router/ProtectedRoute'
 import RoleRoute from '@/core/router/RoleRoute'
 import AdminHomePage from '@/modules/admin/pages/AdminHomePage'
+import AdminBooksPage from '@/modules/admin/pages/AdminBooksPage'
+import AdminImportStocksPage from '@/modules/admin/pages/AdminImportStocksPage'
+import AdminOrderDetailPage from '@/modules/admin/pages/AdminOrderDetailPage'
+import AdminOrdersPage from '@/modules/admin/pages/AdminOrdersPage'
+import AdminPromotionDetailPage from '@/modules/admin/pages/AdminPromotionDetailPage'
+import AdminPromotionsPage from '@/modules/admin/pages/AdminPromotionsPage'
+import AdminSuppliersPage from '@/modules/admin/pages/AdminSuppliersPage'
+import AdminUsersPage from '@/modules/admin/pages/AdminUsersPage'
+import AdminLoginPage from '@/modules/auth/pages/AdminLoginPage'
 import LoginPage from '@/modules/auth/pages/LoginPage'
 import RegisterPage from '@/modules/auth/pages/RegisterPage'
 import ForgotPasswordPage from '@/modules/auth/pages/ForgotPasswordPage'
@@ -21,6 +30,9 @@ import { OrderDetailPage } from '@/modules/order/pages/OrderDetailPage'
 import { PaymentResultPage } from '@/modules/order/pages/PaymentResultPage'
 import { MyReturnsPage } from '@/modules/returns/pages/MyReturnsPage'
 import StaffHomePage from '@/modules/staff/pages/StaffHomePage'
+import StaffPurchaseOrdersPage from '@/modules/staff/pages/StaffPurchaseOrdersPage'
+import StaffReturnRequestsPage from '@/modules/staff/pages/StaffReturnRequestsPage'
+import StaffStockCheckPage from '@/modules/staff/pages/StaffStockCheckPage'
 import ProfilePage from '@/modules/account/pages/ProfilePage'
 import AddressPage from '@/modules/account/pages/AddressPage'
 
@@ -28,6 +40,7 @@ export default function AppRoutes() {
   return (
     <Routes>
       {/* ─── Auth (public) ─────────────────────────────────────── */}
+      <Route path="/auth/admin-login" element={<AdminLoginPage />} />
       <Route path="/auth/login" element={<LoginPage />} />
       <Route
         path="/admin/login"
@@ -126,13 +139,23 @@ export default function AppRoutes() {
       <Route
         path="/admin"
         element={
-          <RoleRoute allowed={['ADMIN']} loginPath="/admin/login">
+          <RoleRoute allowed={['ADMIN']} loginPath="/auth/admin-login">
             <AdminLayout />
           </RoleRoute>
         }
       >
         <Route index element={<AdminHomePage />} />
-        {/* TODO: nested admin pages */}
+        <Route path="orders" element={<AdminOrdersPage />} />
+        <Route path="orders/:id" element={<AdminOrderDetailPage />} />
+        <Route path="returns" element={<StaffReturnRequestsPage />} />
+        <Route path="promotions" element={<AdminPromotionsPage />} />
+        <Route path="promotions/:id" element={<AdminPromotionDetailPage />} />
+        <Route path="users" element={<AdminUsersPage />} />
+        <Route path="suppliers" element={<AdminSuppliersPage />} />
+        <Route path="purchase-orders" element={<StaffPurchaseOrdersPage />} />
+        <Route path="stock-check" element={<StaffStockCheckPage />} />
+        <Route path="books" element={<AdminBooksPage />} />
+        <Route path="inventory" element={<AdminImportStocksPage />} />
       </Route>
 
       {/* ─── Staff (cả SELLER và WAREHOUSE) ───────────────────── */}
@@ -145,7 +168,9 @@ export default function AppRoutes() {
         }
       >
         <Route index element={<StaffHomePage />} />
-        {/* TODO: nested staff pages */}
+        <Route path="returns" element={<StaffReturnRequestsPage />} />
+        <Route path="purchase-orders" element={<StaffPurchaseOrdersPage />} />
+        <Route path="stock-check" element={<StaffStockCheckPage />} />
       </Route>
 
       <Route path="/404" element={<NotFoundPage />} />
