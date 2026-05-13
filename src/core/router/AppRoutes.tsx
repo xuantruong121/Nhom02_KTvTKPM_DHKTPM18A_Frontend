@@ -15,6 +15,11 @@ import NotFoundPage from '@/modules/common/pages/NotFoundPage'
 import { HomePage } from '@/modules/home/pages/HomePage'
 import { BookDetailPage } from '@/modules/catalog/pages/BookDetailPage'
 import { BooksPage } from '@/modules/catalog/pages/BooksPage'
+import { CheckoutPage } from '@/modules/order/pages/CheckoutPage'
+import { MyOrdersPage } from '@/modules/order/pages/MyOrdersPage'
+import { OrderDetailPage } from '@/modules/order/pages/OrderDetailPage'
+import { PaymentResultPage } from '@/modules/order/pages/PaymentResultPage'
+import { MyReturnsPage } from '@/modules/returns/pages/MyReturnsPage'
 import StaffHomePage from '@/modules/staff/pages/StaffHomePage'
 import ProfilePage from '@/modules/account/pages/ProfilePage'
 import AddressPage from '@/modules/account/pages/AddressPage'
@@ -65,7 +70,42 @@ export default function AppRoutes() {
             </ProtectedRoute>
           }
         />
-        {/* TODO: /checkout ... */}
+        <Route
+          path="/checkout"
+          element={
+            <ProtectedRoute>
+              <CheckoutPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/payment/result"
+          element={<PaymentResultPage />}
+        />
+        <Route
+          path="/orders"
+          element={
+            <ProtectedRoute>
+              <MyOrdersPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/orders/:id"
+          element={
+            <ProtectedRoute>
+              <OrderDetailPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/returns"
+          element={
+            <ProtectedRoute>
+              <MyReturnsPage />
+            </ProtectedRoute>
+          }
+        />
       </Route>
 
       {/* ─── Profile (user đã đăng nhập) ──────────────────────── */}

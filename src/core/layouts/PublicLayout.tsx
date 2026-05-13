@@ -4,6 +4,7 @@ import {
   BookOutlined,
   DownOutlined,
   EnvironmentOutlined,
+  FileTextOutlined,
   GlobalOutlined,
   LoginOutlined,
   LogoutOutlined,
@@ -144,6 +145,11 @@ function PublicLayoutImpl() {
           icon: <EnvironmentOutlined />,
           label: <Link to="/profile/addresses">Địa chỉ nhận hàng</Link>,
         },
+        {
+          key: 'orders',
+          icon: <FileTextOutlined />,
+          label: <Link to="/orders">Đơn hàng của tôi</Link>,
+        },
         { type: 'divider' as const },
         {
           key: 'logout',
@@ -252,6 +258,7 @@ function PublicLayoutImpl() {
             <AppstoreOutlined /> Flash Sale
           </Link>
           <Link to="/books">Tất cả sách</Link>
+          <Link to="/orders">Đơn hàng của tôi</Link>
           <Link to="/#featured-categories">Danh mục nổi bật</Link>
           <Link to="/#shopping-trends">Xu hướng mua sắm</Link>
           <Link to="/#rankings">Bảng xếp hạng</Link>
@@ -294,7 +301,7 @@ function PublicLayoutImpl() {
             <h4>Tài khoản</h4>
             <a>Đăng nhập</a>
             <a>Đăng ký</a>
-            <a>Đơn hàng của tôi</a>
+            <Link to="/orders">Đơn hàng của tôi</Link>
           </Col>
           <Col xs={12} md={4}>
             <h4>Liên hệ</h4>
