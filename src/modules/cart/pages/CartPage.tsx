@@ -20,7 +20,7 @@ import {
   Typography,
 } from 'antd'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { cartApi, type Cart, type CartItem } from '@/modules/cart/api/cartApi'
 import { catalogApi } from '@/modules/catalog/api/catalogApi'
@@ -49,6 +49,7 @@ function getLineTotal(price: number | string, quantity: number) {
 export function CartPage() {
   const queryClient = useQueryClient()
   const { message } = App.useApp()
+  const navigate = useNavigate()
 
   const cartQuery = useApiQuery(['cart'], () => cartApi.getCart())
   const booksQuery = useApiQuery(['catalog', 'books', 'cart'], () => catalogApi.getBooks())
@@ -476,7 +477,13 @@ export function CartPage() {
                 <strong>{formatPrice(selectedSubtotal)}</strong>
               </div>
 
-              <Button block type="primary" size="large" disabled={selectedItems.length === 0}>
+              <Button
+                block
+                type="primary"
+                size="large"
+                disabled={selectedItems.length === 0}
+                onClick={() => navigate('/checkout')}
+              >
                 Thanh toán
               </Button>
               <Typography.Paragraph type="secondary" className="cart-checkout-note">
