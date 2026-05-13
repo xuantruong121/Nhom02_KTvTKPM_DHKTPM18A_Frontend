@@ -1,6 +1,6 @@
 import { Form, Input, InputNumber, Modal, Select, Upload } from 'antd'
 import type { UploadFile } from 'antd/es/upload/interface'
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import type { AdminBook, BookPayload, Category } from '@/modules/admin/api/adminApi'
 
 type Props = {
@@ -18,7 +18,6 @@ type BookForm = Omit<BookPayload, 'image'> & {
 
 export default function StaffBookModal({ open, book, categories, loading, onCancel, onSubmit }: Props) {
   const [form] = Form.useForm<BookForm>()
-  const [fileList, setFileList] = useState<UploadFile[]>([])
 
   useEffect(() => {
     if (!open) return
@@ -37,11 +36,11 @@ export default function StaffBookModal({ open, book, categories, loading, onCanc
         language: book.language,
         pageCount: book.pageCount,
         coverType: book.coverType,
+        image: [],
       })
     } else {
       form.resetFields()
     }
-    setFileList([])
   }, [book, form, open])
 
   return (
@@ -55,7 +54,7 @@ export default function StaffBookModal({ open, book, categories, loading, onCanc
       style={{ top: 24 }}
       styles={{ body: { maxHeight: 'calc(100vh - 180px)', overflowY: 'auto', paddingRight: 12 } }}
     >
-      <Form form={form} layout="vertical" onFinish={(values) => onSubmit(toPayload(values, fileList))}>
+      <Form form={form} layout="vertical" onFinish={(values) => onSubmit(toPayload(values))}>
         <Form.Item name="title" label="Tên sách" rules={[{ required: !book }]}>
           <Input />
         </Form.Item>
@@ -80,13 +79,16 @@ export default function StaffBookModal({ open, book, categories, loading, onCanc
             options={categories.map((category) => ({ value: category.id, label: category.name }))}
           />
         </Form.Item>
-        <Form.Item label="Ảnh bìa">
+        <Form.Item
+          name="image"
+          label="Ảnh bìa"
+          valuePropName="fileList"
+          getValueFromEvent={(event: { fileList?: UploadFile[] }) => event.fileList ?? []}
+        >
           <Upload
             beforeUpload={() => false}
-            fileList={fileList}
             maxCount={1}
             listType="picture"
-            onChange={({ fileList: next }) => setFileList(next)}
           >
             <Input readOnly value="Chọn ảnh" />
           </Upload>
@@ -114,9 +116,10 @@ export default function StaffBookModal({ open, book, categories, loading, onCanc
   )
 }
 
-function toPayload(values: BookForm, fileList: UploadFile[]): BookPayload {
+function toPayload(values: BookForm): BookPayload {
+  const { image, ...payload } = values
   return {
-    ...values,
-    image: fileList[0]?.originFileObj,
+    ...payload,
+    image: image?.[0]?.originFileObj,
   }
 }
