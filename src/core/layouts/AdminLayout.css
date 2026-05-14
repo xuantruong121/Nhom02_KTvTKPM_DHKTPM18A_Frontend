@@ -1,0 +1,24 @@
+.admin-layout-sider {
+  border-inline-end: 0;
+}
+
+.admin-layout-menu-scroll {
+  height: calc(100vh - 56px - 48px);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.admin-layout-menu-scroll::-webkit-scrollbar {
+  width: 0;
+}
+
+.admin-layout-sider .ant-layout-sider-trigger {
+  border: 0;
+  box-shadow: none;
+  inset-inline-start: 0;
+}
+
+.admin-layout-sider .ant-layout-sider-zero-width-trigger {
+  border: 0;
+  box-shadow: none;
+}

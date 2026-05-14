@@ -1,7 +1,7 @@
 import { App, Button, Card, Input, Modal, Select, Space, Table, Tag, Typography } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import {
   adminApi,
   type ItemCondition,
@@ -22,6 +22,15 @@ export default function StaffReturnRequestsPage() {
   const [active, setActive] = useState<{ request: ReturnRequest; action: ReturnAction } | null>(null)
   const [reason, setReason] = useState('')
   const [conditions, setConditions] = useState<ItemCondition[]>(['GOOD'])
+
+  const sortedReturns = useMemo(() => {
+    return [...(returnsQuery.data ?? [])].sort((left, right) => {
+      const rightTime = right.createdAt ? new Date(right.createdAt).getTime() : 0
+      const leftTime = left.createdAt ? new Date(left.createdAt).getTime() : 0
+      if (rightTime !== leftTime) return rightTime - leftTime
+      return String(right.id).localeCompare(String(left.id), 'vi', { numeric: true })
+    })
+  }, [returnsQuery.data])
 
   const openAction = (request: ReturnRequest, action: ReturnAction) => {
     setActive({ request, action })
@@ -87,7 +96,7 @@ export default function StaffReturnRequestsPage() {
         Yêu cầu trả hàng
       </Typography.Title>
       <Card>
-        <Table rowKey="id" columns={columns} dataSource={returnsQuery.data ?? []} loading={returnsQuery.isLoading} />
+        <Table rowKey="id" columns={columns} dataSource={sortedReturns} loading={returnsQuery.isLoading} />
       </Card>
       <Modal
         title="Xác nhận thao tác"

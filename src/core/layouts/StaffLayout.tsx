@@ -1,10 +1,12 @@
 import {
   AppstoreOutlined,
   AuditOutlined,
+  BookOutlined,
   InboxOutlined,
   LogoutOutlined,
   ProfileOutlined,
   StockOutlined,
+  TagsOutlined,
   UserOutlined,
 } from '@ant-design/icons'
 import { Avatar, Layout, Menu, Space, Tag, Typography } from 'antd'
@@ -33,7 +35,7 @@ function StaffLayoutImpl() {
 
   const menuItems = useMemo<MenuProps['items']>(() => {
     const items: MenuProps['items'] = [
-      { key: '/staff', icon: <AppstoreOutlined />, label: <Link to="/staff">Tong quan</Link> },
+      { key: '/staff', icon: <AppstoreOutlined />, label: <Link to="/staff">Tổng quan</Link> },
     ]
 
     if (user?.role === 'STAFF_SELLER') {
@@ -41,12 +43,12 @@ function StaffLayoutImpl() {
         {
           key: '/staff/orders',
           icon: <ProfileOutlined />,
-          label: <Link to="/staff/orders">Don hang</Link>,
+          label: <Link to="/staff/orders">Đơn hàng</Link>,
         },
         {
           key: '/staff/returns',
           icon: <AuditOutlined />,
-          label: <Link to="/staff/returns">Tra hang</Link>,
+          label: <Link to="/staff/returns">Trả hàng</Link>,
         }
       )
     }
@@ -54,14 +56,29 @@ function StaffLayoutImpl() {
     if (user?.role === 'STAFF_WAREHOUSE') {
       items.push(
         {
+          key: '/staff/books',
+          icon: <BookOutlined />,
+          label: <Link to="/staff/books">Sách</Link>,
+        },
+        {
+          key: '/staff/categories',
+          icon: <TagsOutlined />,
+          label: <Link to="/staff/categories">Danh mục</Link>,
+        },
+        {
+          key: '/staff/inventory',
+          icon: <StockOutlined />,
+          label: <Link to="/staff/inventory">Tồn kho</Link>,
+        },
+        {
           key: '/staff/purchase-orders',
           icon: <InboxOutlined />,
-          label: <Link to="/staff/purchase-orders">PO mua hang</Link>,
+          label: <Link to="/staff/purchase-orders">PO mua hàng</Link>,
         },
         {
           key: '/staff/stock-check',
           icon: <StockOutlined />,
-          label: <Link to="/staff/stock-check">Kiem kho</Link>,
+          label: <Link to="/staff/stock-check">Kiểm kho</Link>,
         }
       )
     }
