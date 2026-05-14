@@ -260,20 +260,6 @@ export function CartPage() {
     [localQuantities, selectedItems]
   )
 
-  const selectedQuantity = useMemo(
-    () =>
-      selectedItems.reduce(
-        (total, item) => total + (localQuantities[item.bookId] ?? item.quantity),
-        0
-      ),
-    [localQuantities, selectedItems]
-  )
-
-  const totalQuantity = useMemo(
-    () => items.reduce((total, item) => total + (localQuantities[item.bookId] ?? item.quantity), 0),
-    [items, localQuantities]
-  )
-
   const loading = cartQuery.isLoading || booksQuery.isLoading
 
   return (
@@ -311,10 +297,10 @@ export function CartPage() {
               <Flex align="center" justify="space-between" className="cart-card-title">
                 <Flex align="center" gap={12}>
                   <Checkbox checked={allSelected} indeterminate={someSelected} onChange={toggleAll}>
-                    <strong>{totalQuantity} sản phẩm</strong>
+                    <strong>Chọn tất cả ({items.length})</strong>
                   </Checkbox>
                   <Typography.Text type="secondary">
-                    Đã chọn {selectedQuantity} / {totalQuantity}
+                    Đã chọn {selectedItems.length} / {items.length} sách
                   </Typography.Text>
                   {selectedKeys.size > 0 && (
                     <Popconfirm
@@ -482,7 +468,7 @@ export function CartPage() {
                 type="primary"
                 size="large"
                 disabled={selectedItems.length === 0}
-                onClick={() => navigate('/checkout')}
+                onClick={() => navigate('/checkout', { state: { selectedBookIds: [...selectedKeys] } })}
               >
                 Thanh toán
               </Button>

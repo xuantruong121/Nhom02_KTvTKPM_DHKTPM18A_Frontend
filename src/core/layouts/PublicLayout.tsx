@@ -9,6 +9,7 @@ import {
   LoginOutlined,
   LogoutOutlined,
   MenuOutlined,
+  RobotOutlined,
   SearchOutlined,
   ShoppingCartOutlined,
   UserOutlined,
@@ -254,6 +255,9 @@ function PublicLayoutImpl() {
           </Space>
         </div>
         <nav className="public-nav">
+          <Link to="/ai">
+            <RobotOutlined /> Trợ lý AI
+          </Link>
           <Link to="/#flash-sale">
             <AppstoreOutlined /> Flash Sale
           </Link>

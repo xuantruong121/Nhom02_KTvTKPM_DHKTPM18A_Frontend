@@ -1,11 +1,13 @@
 import { CloseCircleOutlined, ExclamationCircleOutlined, HomeOutlined, LoadingOutlined, ShoppingOutlined } from '@ant-design/icons'
 import { Button, Card, Result, Space, Typography } from 'antd'
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router-dom'
 import { formatMoney } from '@/modules/order/utils/orderFormat'
 import './OrderPages.css'
 
 export function PaymentResultPage() {
+  const queryClient = useQueryClient()
   const [params] = useSearchParams()
   const responseCode = params.get('vnp_ResponseCode')
   const paymentStatus = params.get('paymentStatus')
@@ -21,6 +23,14 @@ export function PaymentResultPage() {
   const isSuccess = responseCode === '00' || paymentStatus === 'success'
   const isCancelled = responseCode === '24' || paymentStatus === 'cancelled'
   const isPending = !responseCode && !paymentStatus
+
+  useEffect(() => {
+    if (!isSuccess) return
+
+    void queryClient.invalidateQueries({ queryKey: ['cart'] })
+    void queryClient.invalidateQueries({ queryKey: ['orders'] })
+    void queryClient.invalidateQueries({ queryKey: ['catalog', 'books'] })
+  }, [isSuccess, queryClient])
 
   return (
     <main className="order-page">

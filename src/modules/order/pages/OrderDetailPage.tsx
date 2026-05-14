@@ -224,7 +224,12 @@ export function OrderDetailPage() {
               <Card className="se-card" title="Sản phẩm">
                 <div className="order-items">
                   {order.items.map((item) => (
-                    <OrderItemRow item={item} key={item.bookId} title={booksById.get(item.bookId)?.title} />
+                    <OrderItemRow
+                      item={item}
+                      key={item.bookId}
+                      title={booksById.get(item.bookId)?.title}
+                      imageUrl={booksById.get(item.bookId)?.imageUrl}
+                    />
                   ))}
                 </div>
               </Card>
@@ -374,11 +379,19 @@ export function OrderDetailPage() {
   )
 }
 
-function OrderItemRow({ item, title }: { item: OrderItem; title?: string }) {
+function OrderItemRow({
+  item,
+  title,
+  imageUrl,
+}: {
+  item: OrderItem
+  title?: string
+  imageUrl?: string | null
+}) {
   return (
     <div className="order-item-row">
       <div className="order-item-thumb">
-        <ShoppingCartOutlined />
+        {imageUrl ? <img src={imageUrl} alt={title ?? `Sách #${item.bookId}`} /> : <ShoppingCartOutlined />}
       </div>
       <div>
         <Link to={`/books/${item.bookId}`}>{title ?? `Sách #${item.bookId}`}</Link>

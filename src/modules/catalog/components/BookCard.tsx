@@ -33,7 +33,7 @@ export function BookCard({ book }: { book: Book }) {
 
   return (
     <Card hoverable className="catalog-book-card">
-      <Link to={`/books/${book.id}`} className="catalog-book-link">
+      <Link to={`/books/${book.id}`} className="catalog-book-link" aria-label={`Xem chi tiết ${book.title}`}>
         <div className="catalog-book-cover">
           {book.imageUrl ? (
             <Image src={book.imageUrl} alt={book.title} preview={false} />
@@ -48,28 +48,28 @@ export function BookCard({ book }: { book: Book }) {
         <Typography.Text type="secondary" className="catalog-book-author">
           {book.author || book.publisher || 'SEBook'}
         </Typography.Text>
-      </Link>
 
-      <Flex align="center" justify="space-between" className="catalog-book-price-row">
-        <Space direction="vertical" size={0}>
-          <Typography.Text strong className="catalog-book-price">
-            {formatPrice(book.price)}
-          </Typography.Text>
-          {book.originalPrice ? (
-            <Typography.Text delete className="catalog-book-original">
-              {formatPrice(book.originalPrice)}
+        <Flex align="center" justify="space-between" className="catalog-book-price-row">
+          <Space direction="vertical" size={0}>
+            <Typography.Text strong className="catalog-book-price">
+              {formatPrice(book.price)}
             </Typography.Text>
-          ) : null}
-        </Space>
-        {discount ? <Tag color="red">-{discount}%</Tag> : null}
-      </Flex>
+            {book.originalPrice ? (
+              <Typography.Text delete className="catalog-book-original">
+                {formatPrice(book.originalPrice)}
+              </Typography.Text>
+            ) : null}
+          </Space>
+          {discount ? <Tag color="red">-{discount}%</Tag> : null}
+        </Flex>
 
-      <Flex align="center" justify="space-between" className="catalog-book-meta">
-        <span>
-          <StarFilled /> {toNumber(book.averageRating).toFixed(1)} ({book.ratingCount ?? 0})
-        </span>
-        <span>{book.quantity > 0 ? `Còn ${book.quantity}` : 'Hết hàng'}</span>
-      </Flex>
+        <Flex align="center" justify="space-between" className="catalog-book-meta">
+          <span>
+            <StarFilled /> {toNumber(book.averageRating).toFixed(1)} ({book.ratingCount ?? 0})
+          </span>
+          <span>{book.quantity > 0 ? `Còn ${book.quantity}` : 'Hết hàng'}</span>
+        </Flex>
+      </Link>
 
       <Button
         block

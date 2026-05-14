@@ -4,6 +4,7 @@ import {
   GiftOutlined,
   LogoutOutlined,
   ProfileOutlined,
+  RobotOutlined,
   ShopOutlined,
   StockOutlined,
   TeamOutlined,
@@ -20,6 +21,7 @@ const { Sider, Header, Content } = Layout
 
 const MENU_ITEMS: MenuProps['items'] = [
   { key: '/admin', icon: <DashboardOutlined />, label: <Link to="/admin">Dashboard</Link> },
+  { key: '/admin/ai', icon: <RobotOutlined />, label: <Link to="/admin/ai">AI</Link> },
   { key: '/admin/books', icon: <BookOutlined />, label: <Link to="/admin/books">Sách</Link> },
   { key: '/admin/orders', icon: <ProfileOutlined />, label: <Link to="/admin/orders">Đơn hàng</Link> },
   { key: '/admin/returns', icon: <ProfileOutlined />, label: <Link to="/admin/returns">Trả hàng</Link> },
