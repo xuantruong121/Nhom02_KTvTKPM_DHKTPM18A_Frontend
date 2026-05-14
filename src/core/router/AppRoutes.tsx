@@ -6,12 +6,14 @@ import ProtectedRoute from '@/core/router/ProtectedRoute'
 import RoleRoute from '@/core/router/RoleRoute'
 import AdminHomePage from '@/modules/admin/pages/AdminHomePage'
 import AdminBooksPage from '@/modules/admin/pages/AdminBooksPage'
+import AdminAuditLogsPage from '@/modules/admin/pages/AdminAuditLogsPage'
 import AdminImportStocksPage from '@/modules/admin/pages/AdminImportStocksPage'
 import AdminOrderDetailPage from '@/modules/admin/pages/AdminOrderDetailPage'
 import AdminOrdersPage from '@/modules/admin/pages/AdminOrdersPage'
 import AdminPromotionDetailPage from '@/modules/admin/pages/AdminPromotionDetailPage'
 import AdminPromotionsPage from '@/modules/admin/pages/AdminPromotionsPage'
 import AdminSuppliersPage from '@/modules/admin/pages/AdminSuppliersPage'
+import AdminSystemCatalogPage from '@/modules/admin/pages/AdminSystemCatalogPage'
 import AdminUsersPage from '@/modules/admin/pages/AdminUsersPage'
 import AdminLoginPage from '@/modules/auth/pages/AdminLoginPage'
 import LoginPage from '@/modules/auth/pages/LoginPage'
@@ -24,6 +26,7 @@ import NotFoundPage from '@/modules/common/pages/NotFoundPage'
 import { HomePage } from '@/modules/home/pages/HomePage'
 import { BookDetailPage } from '@/modules/catalog/pages/BookDetailPage'
 import { BooksPage } from '@/modules/catalog/pages/BooksPage'
+import CategoryManagementPage from '@/modules/catalog/pages/CategoryManagementPage'
 import { CheckoutPage } from '@/modules/order/pages/CheckoutPage'
 import { MyOrdersPage } from '@/modules/order/pages/MyOrdersPage'
 import { OrderDetailPage } from '@/modules/order/pages/OrderDetailPage'
@@ -152,11 +155,14 @@ export default function AppRoutes() {
         <Route path="promotions" element={<AdminPromotionsPage />} />
         <Route path="promotions/:id" element={<AdminPromotionDetailPage />} />
         <Route path="users" element={<AdminUsersPage />} />
+        <Route path="audit-logs" element={<AdminAuditLogsPage />} />
+        <Route path="system/catalog" element={<AdminSystemCatalogPage />} />
         <Route path="suppliers" element={<AdminSuppliersPage />} />
         <Route path="purchase-orders" element={<StaffPurchaseOrdersPage />} />
         <Route path="purchase-orders/:id" element={<StaffPurchaseOrderDetailPage />} />
         <Route path="stock-check" element={<StaffStockCheckPage />} />
         <Route path="books" element={<AdminBooksPage />} />
+        <Route path="categories" element={<CategoryManagementPage area="admin" />} />
         <Route path="inventory" element={<AdminImportStocksPage />} />
       </Route>
 
@@ -191,6 +197,30 @@ export default function AppRoutes() {
           element={
             <RoleRoute allowed={['STAFF_SELLER']} loginPath="/staff/login">
               <StaffReturnRequestsPage />
+            </RoleRoute>
+          }
+        />
+        <Route
+          path="categories"
+          element={
+            <RoleRoute allowed={['STAFF_WAREHOUSE']} loginPath="/staff/login">
+              <CategoryManagementPage area="staff" />
+            </RoleRoute>
+          }
+        />
+        <Route
+          path="books"
+          element={
+            <RoleRoute allowed={['STAFF_WAREHOUSE']} loginPath="/staff/login">
+              <AdminBooksPage canDelete={false} />
+            </RoleRoute>
+          }
+        />
+        <Route
+          path="inventory"
+          element={
+            <RoleRoute allowed={['STAFF_WAREHOUSE']} loginPath="/staff/login">
+              <AdminImportStocksPage />
             </RoleRoute>
           }
         />
