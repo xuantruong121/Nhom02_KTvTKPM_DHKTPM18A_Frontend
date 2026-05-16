@@ -3,7 +3,9 @@ import {
   DeleteOutlined,
   EditOutlined,
   EnvironmentOutlined,
+  PhoneOutlined,
   PlusOutlined,
+  UserOutlined,
 } from '@ant-design/icons'
 import {
   Alert,
@@ -15,6 +17,7 @@ import {
   Input,
   Modal,
   Row,
+  Select,
   Skeleton,
   Space,
   Switch,
@@ -27,44 +30,88 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useApiQuery } from '@/shared/hooks/useApiQuery'
 import { useApiMutation } from '@/shared/hooks/useApiQuery'
 import { accountApi, type AddressDto, type AddressRequest } from '@/modules/account/api/accountApi'
+import vnUnitsSql from '../../../../../data_VN/postgres_ImportData_vn_units.sql?raw'
 
 const PROFILE_QUERY_KEY = ['account', 'profile']
 
 type AddressFormValues = AddressRequest
 
+type ProvinceOption = {
+  code: string
+  name: string
+}
+
+type WardOption = {
+  code: string
+  provinceCode: string
+  name: string
+}
+
+function parseVietnamUnits(sql: string) {
+  const provincePattern = /\('([^']+)','[^']*','[^']*','([^']+)','[^']*','[^']*',\d+\)/g
+  const wardPattern = /\('([^']+)','[^']*','[^']*','([^']*)','[^']*','[^']*','([^']+)',\d+\)/g
+  const provinces: ProvinceOption[] = []
+  const wards: WardOption[] = []
+  let match: RegExpExecArray | null
+
+  while ((match = provincePattern.exec(sql))) {
+    provinces.push({ code: match[1], name: match[2] })
+  }
+
+  while ((match = wardPattern.exec(sql))) {
+    wards.push({ code: match[1], name: match[2], provinceCode: match[3] })
+  }
+
+  return { provinces, wards }
+}
+
+const vietnamUnits = parseVietnamUnits(vnUnitsSql)
+
 function AddressModal({
   open,
   initial,
+  defaults,
   onClose,
   onSave,
   saving,
 }: {
   open: boolean
   initial?: AddressDto | null
+  defaults?: { recipientName?: string; phoneNumber?: string }
   onClose: () => void
   onSave: (values: AddressRequest) => void
   saving: boolean
 }) {
   const [form] = Form.useForm<AddressFormValues>()
+  const selectedCity = Form.useWatch('city', form)
+  const selectedProvince = vietnamUnits.provinces.find((province) => province.name === selectedCity)
+  const wardOptions = selectedProvince
+    ? vietnamUnits.wards.filter((ward) => ward.provinceCode === selectedProvince.code)
+    : []
 
   useEffect(() => {
     if (open) {
       if (initial) {
         console.log('[FE] Opening AddressModal for EDIT with data:', initial)
         form.setFieldsValue({
+          recipientName: initial.recipientName,
+          phoneNumber: initial.phoneNumber,
           street: initial.street,
           ward: initial.ward,
-          district: initial.district,
           city: initial.city,
           isDefault: initial.isDefault,
         })
       } else {
         console.log('[FE] Opening AddressModal for CREATE')
         form.resetFields()
-        form.setFieldsValue({ isDefault: false })
+        form.setFieldsValue({
+          recipientName: defaults?.recipientName,
+          phoneNumber: defaults?.phoneNumber,
+          isDefault: false,
+        })
       }
     }
-  }, [open, initial, form])
+  }, [open, initial, defaults, form])
 
   const handleOk = async () => {
     const values = await form.validateFields()
@@ -91,16 +138,39 @@ function AddressModal({
         initialValues={
           initial
             ? {
+                recipientName: initial.recipientName,
+                phoneNumber: initial.phoneNumber,
                 street: initial.street,
                 ward: initial.ward,
-                district: initial.district,
                 city: initial.city,
                 isDefault: initial.isDefault,
               }
-            : { isDefault: false }
+            : {
+                recipientName: defaults?.recipientName,
+                phoneNumber: defaults?.phoneNumber,
+                isDefault: false,
+              }
         }
       >
         <Row gutter={12}>
+          <Col span={12}>
+            <Form.Item
+              label="Tên người nhận"
+              name="recipientName"
+              rules={[{ required: true, message: 'Vui lòng nhập tên người nhận' }]}
+            >
+              <Input prefix={<UserOutlined />} placeholder="VD: Nguyễn Văn A" />
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item
+              label="Số điện thoại"
+              name="phoneNumber"
+              rules={[{ required: true, message: 'Vui lòng nhập số điện thoại' }]}
+            >
+              <Input prefix={<PhoneOutlined />} placeholder="VD: 0901234567" />
+            </Form.Item>
+          </Col>
           <Col span={24}>
             <Form.Item
               label="Địa chỉ (số nhà, tên đường)"
@@ -112,37 +182,41 @@ function AddressModal({
           </Col>
           <Col span={12}>
             <Form.Item
-              label="Phường / Xã"
-              name="ward"
-              rules={[{ required: true, message: 'Vui lòng nhập phường/xã' }]}
+              label="Tỉnh / Thành phố"
+              name="city"
+              rules={[{ required: true, message: 'Vui lòng chọn tỉnh/thành phố' }]}
             >
-              <Input placeholder="VD: Phường 15" />
+              <Select
+                showSearch
+                optionFilterProp="label"
+                placeholder="Chọn tỉnh/thành phố"
+                options={vietnamUnits.provinces.map((province) => ({
+                  value: province.name,
+                  label: province.name,
+                }))}
+                onChange={(city) => {
+                  form.setFieldsValue({ city, ward: undefined })
+                }}
+              />
             </Form.Item>
           </Col>
           <Col span={12}>
             <Form.Item
-              label="Quận / Huyện"
-              name="district"
-              rules={[{ required: true, message: 'Vui lòng nhập quận/huyện' }]}
+              label="Phường / Xã"
+              name="ward"
+              rules={[{ required: true, message: 'Vui lòng chọn phường/xã' }]}
             >
-              <Input placeholder="VD: Gò Vấp" />
+              <Select
+                showSearch
+                disabled={!selectedProvince}
+                optionFilterProp="label"
+                placeholder={selectedProvince ? 'Chọn phường/xã' : 'Chọn tỉnh/thành phố trước'}
+                options={wardOptions.map((ward) => ({ value: ward.name, label: ward.name }))}
+              />
             </Form.Item>
           </Col>
           <Col span={24}>
-            <Form.Item
-              label="Tỉnh / Thành phố"
-              name="city"
-              rules={[{ required: true, message: 'Vui lòng nhập tỉnh/thành phố' }]}
-            >
-              <Input placeholder="VD: TP. Hồ Chí Minh" />
-            </Form.Item>
-          </Col>
-          <Col span={24}>
-            <Form.Item
-              label="Đặt làm địa chỉ mặc định"
-              name="isDefault"
-              valuePropName="checked"
-            >
+            <Form.Item label="Đặt làm địa chỉ mặc định" name="isDefault" valuePropName="checked">
               <Switch />
             </Form.Item>
           </Col>
@@ -161,10 +235,7 @@ export default function AddressPage() {
   const [deleteId, setDeleteId] = useState<number | null>(null)
   const [saving, setSaving] = useState(false)
 
-  const { data: profile, isLoading } = useApiQuery(
-    PROFILE_QUERY_KEY,
-    () => accountApi.getProfile()
-  )
+  const { data: profile, isLoading } = useApiQuery(PROFILE_QUERY_KEY, () => accountApi.getProfile())
 
   const addresses = profile?.addresses ?? []
 
@@ -194,16 +265,13 @@ export default function AddressPage() {
     }
   }
 
-  const deleteMutation = useApiMutation(
-    (id: number) => accountApi.deleteAddress(id),
-    {
-      showErrorMessage: true,
-      onSuccess: () => {
-        void message.success('Đã xóa địa chỉ')
-        void invalidate()
-      },
-    }
-  )
+  const deleteMutation = useApiMutation((id: number) => accountApi.deleteAddress(id), {
+    showErrorMessage: true,
+    onSuccess: () => {
+      void message.success('Đã xóa địa chỉ')
+      void invalidate()
+    },
+  })
 
   const confirmDelete = (id: number) => {
     setDeleteId(id)
@@ -298,13 +366,17 @@ export default function AddressPage() {
                 <Space direction="vertical" size={2}>
                   <Space>
                     <Typography.Text strong>
-                      {addr.street}, {addr.ward}
+                      {addr.recipientName || profile?.fullName || 'Người nhận'}
                     </Typography.Text>
                     {addr.isDefault && <Tag color="blue">Mặc định</Tag>}
                   </Space>
                   <Typography.Text type="secondary">
-                    {addr.district}, {addr.city}
+                    {addr.phoneNumber || profile?.phoneNumber || 'Chưa có số điện thoại'}
                   </Typography.Text>
+                  <Typography.Text>
+                    {addr.street}, {addr.ward}
+                  </Typography.Text>
+                  <Typography.Text type="secondary">{addr.city}</Typography.Text>
                 </Space>
               </Card>
             ))}
@@ -315,6 +387,7 @@ export default function AddressPage() {
       <AddressModal
         open={modalOpen}
         initial={editTarget}
+        defaults={{ recipientName: profile?.fullName, phoneNumber: profile?.phoneNumber }}
         onClose={() => {
           setModalOpen(false)
           setEditTarget(null)

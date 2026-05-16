@@ -2,11 +2,8 @@ import { Button, Card, Input, Select, Space, Table, Tag, Typography } from 'antd
 import type { ColumnsType } from 'antd/es/table'
 import { Link, useLocation } from 'react-router-dom'
 import { useState } from 'react'
-import {
-  adminApi,
-  type AdminOrder,
-  type FulfillmentStatus,
-} from '@/modules/admin/api/adminApi'
+import { adminApi, type AdminOrder, type FulfillmentStatus } from '@/modules/admin/api/adminApi'
+import { getOrderStatusMeta } from '@/modules/order/utils/orderFormat'
 import { useApiQuery } from '@/shared/hooks/useApiQuery'
 
 const STATUS_OPTIONS: FulfillmentStatus[] = [
@@ -40,14 +37,19 @@ export default function AdminOrdersPage() {
       render: (_, order) => (
         <Space direction="vertical" size={0}>
           <span>{order.customerName || `User #${order.userId}`}</span>
-          <Typography.Text type="secondary">{order.customerEmail || order.customerPhone}</Typography.Text>
+          <Typography.Text type="secondary">
+            {order.customerEmail || order.customerPhone}
+          </Typography.Text>
         </Space>
       ),
     },
     {
       title: 'Trạng thái',
       dataIndex: 'fulfillmentStatus',
-      render: (value: FulfillmentStatus) => <Tag color={value === 'CANCELLED' ? 'red' : 'blue'}>{value}</Tag>,
+      render: (value: FulfillmentStatus) => {
+        const meta = getOrderStatusMeta(value)
+        return <Tag color={meta.color}>{meta.label}</Tag>
+      },
       width: 150,
     },
     { title: 'Tổng tiền', dataIndex: 'finalAmount', render: money, width: 140 },
@@ -76,7 +78,10 @@ export default function AdminOrdersPage() {
             style={{ width: 180 }}
             value={status}
             onChange={setStatus}
-            options={STATUS_OPTIONS.map((item) => ({ value: item, label: item }))}
+            options={STATUS_OPTIONS.map((item) => ({
+              value: item,
+              label: getOrderStatusMeta(item).label,
+            }))}
           />
           <Input.Search
             allowClear

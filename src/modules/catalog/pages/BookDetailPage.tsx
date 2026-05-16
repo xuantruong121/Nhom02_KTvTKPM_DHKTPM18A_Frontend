@@ -27,7 +27,7 @@ import {
   Typography,
 } from 'antd'
 import { useMemo, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { catalogApi, type Book, type Category } from '@/modules/catalog/api/catalogApi'
 import { BookCard } from '@/modules/catalog/components/BookCard'
 import { useAddToCart } from '@/modules/cart/hooks/useAddToCart'
@@ -67,6 +67,7 @@ function getCategoryNames(book: Book, categories: Category[]) {
 
 export function BookDetailPage() {
   const params = useParams<{ id: string }>()
+  const navigate = useNavigate()
   const bookId = Number(params.id)
   const [quantity, setQuantity] = useState(1)
   const { addToCart, isPending: isAddingToCart } = useAddToCart()
@@ -116,6 +117,17 @@ export function BookDetailPage() {
   const categoryNames = getCategoryNames(book, categories)
   const rating = toNumber(book.averageRating)
   const stock = book.quantity
+  const handleBuyNow = async () => {
+    const added = await addToCart({
+      bookId: book.id,
+      quantity,
+      successMessage: false,
+    })
+
+    if (added) {
+      navigate('/checkout', { state: { selectedBookIds: [book.id] } })
+    }
+  }
 
   return (
     <main className="book-detail-page">
@@ -242,7 +254,7 @@ export function BookDetailPage() {
                   type="primary"
                   disabled={stock <= 0}
                   loading={isAddingToCart}
-                  onClick={() => void addToCart({ bookId: book.id, quantity })}
+                  onClick={() => void handleBuyNow()}
                 >
                   Mua ngay
                 </Button>

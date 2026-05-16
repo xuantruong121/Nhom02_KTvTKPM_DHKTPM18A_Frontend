@@ -15,9 +15,10 @@ import type { ApiResponse } from '@/shared/api/types'
 
 export type AddressDto = {
   id: number
+  recipientName?: string
+  phoneNumber?: string
   street: string
   ward: string
-  district: string
   city: string
   isDefault: boolean
 }
@@ -37,9 +38,10 @@ export type UpdateProfileRequest = {
 }
 
 export type AddressRequest = {
+  recipientName: string
+  phoneNumber: string
   street: string
   ward: string
-  district: string
   city: string
   isDefault: boolean
 }

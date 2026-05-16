@@ -1,4 +1,4 @@
-import { http, unwrapApi } from '@/shared/api/http'
+import { http, httpV2, unwrapApi } from '@/shared/api/http'
 
 export type Money = number | string
 
@@ -182,6 +182,26 @@ export type AdminUser = {
   enabled: boolean
 }
 
+export type StaffRole = 'STAFF_SELLER' | 'STAFF_WAREHOUSE'
+
+export type CreateStaffPayload = {
+  email: string
+  fullName: string
+  password: string
+  role: StaffRole
+}
+
+export type AuditLog = {
+  id: number
+  userId?: string
+  role?: StaffRole
+  action: string
+  target?: string
+  oldValue?: string
+  newValue?: string
+  createdAt: string
+}
+
 export type Category = {
   id: number
   name: string
@@ -242,28 +262,28 @@ function toBookFormData(payload: BookPayload) {
 
 export const adminApi = {
   getDashboard() {
-    return unwrapApi<DashboardMetrics>(http.get('/admin/dashboard/metrics'))
+    return unwrapApi<DashboardMetrics>(httpV2.get('/admin/dashboard/metrics'))
   },
   getOrders(params?: OrderFilters) {
-    return unwrapApi<AdminOrder[]>(http.get('/admin/orders', { params }))
+    return unwrapApi<AdminOrder[]>(httpV2.get('/admin/orders', { params }))
   },
   getOrder(id: number) {
-    return unwrapApi<AdminOrder>(http.get(`/admin/orders/${id}`))
+    return unwrapApi<AdminOrder>(httpV2.get(`/admin/orders/${id}`))
   },
   updateOrderStatus(id: number, newStatus: FulfillmentStatus, reason?: string) {
-    return unwrapApi<AdminOrder>(http.put(`/admin/orders/${id}/status`, { newStatus, reason }))
+    return unwrapApi<AdminOrder>(httpV2.put(`/admin/orders/${id}/status`, { newStatus, reason }))
   },
   processOrder(id: number) {
-    return unwrapApi<AdminOrder>(http.put(`/admin/orders/${id}/process`))
+    return unwrapApi<AdminOrder>(httpV2.put(`/admin/orders/${id}/process`))
   },
   shipOrder(id: number) {
-    return unwrapApi<AdminOrder>(http.put(`/admin/orders/${id}/ship`))
+    return unwrapApi<AdminOrder>(httpV2.put(`/admin/orders/${id}/ship`))
   },
   completeOrder(id: number) {
-    return unwrapApi<AdminOrder>(http.put(`/admin/orders/${id}/complete`))
+    return unwrapApi<AdminOrder>(httpV2.put(`/admin/orders/${id}/complete`))
   },
   cancelOrder(id: number, reason?: string) {
-    return unwrapApi<AdminOrder>(http.put(`/admin/orders/${id}/cancel`, reason ? { reason } : undefined))
+    return unwrapApi<AdminOrder>(httpV2.put(`/admin/orders/${id}/cancel`, reason ? { reason } : undefined))
   },
   getReturns() {
     return unwrapApi<ReturnRequest[]>(http.get('/admin/returns'))
@@ -344,8 +364,14 @@ export const adminApi = {
   getUsers() {
     return unwrapApi<AdminUser[]>(http.get('/admin/users'))
   },
+  createStaff(payload: CreateStaffPayload) {
+    return unwrapApi<AdminUser>(http.post('/admin/users/staff', payload))
+  },
   lockUser(id: number) {
     return unwrapApi<AdminUser>(http.put(`/admin/users/${id}/lock`))
+  },
+  getAuditLogs() {
+    return unwrapApi<AuditLog[]>(http.get('/admin/audit-logs'))
   },
   increaseStock(bookId: number, amount: number) {
     return unwrapApi<InventoryStock>(http.put(`/admin/inventory/${bookId}/increase`, { amount }))
