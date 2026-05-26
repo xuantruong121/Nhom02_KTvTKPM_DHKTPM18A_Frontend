@@ -2,86 +2,140 @@ import {
   AppstoreOutlined,
   BellOutlined,
   BookOutlined,
-  DownOutlined,
   EnvironmentOutlined,
   FileTextOutlined,
   GlobalOutlined,
   LoginOutlined,
   LogoutOutlined,
-  MenuOutlined,
   RobotOutlined,
   SearchOutlined,
   ShoppingCartOutlined,
   UserOutlined,
 } from '@ant-design/icons'
 import {
+  App,
   AutoComplete,
   Avatar,
   Badge,
   Button,
   Col,
   Dropdown,
+  Empty,
   Input,
   Layout,
+  List,
   Popover,
   Row,
   Select,
   Space,
+  Typography,
 } from 'antd'
 import type { MenuProps } from 'antd'
-import { memo, useCallback, useMemo, useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
+import dayjs from 'dayjs'
+import { memo, useCallback, useEffect, useMemo, useState, type MouseEvent } from 'react'
 import { Link, Outlet, useNavigate } from 'react-router-dom'
 import { cartApi } from '@/modules/cart/api/cartApi'
 import { catalogApi } from '@/modules/catalog/api/catalogApi'
-import { useApiQuery } from '@/shared/hooks/useApiQuery'
+import { notificationApi } from '@/modules/notification/api/notificationApi'
+import { newsletterApi } from '@/modules/notification/api/newsletterApi'
+import { env } from '@/shared/config/env'
+import { useApiMutation, useApiQuery } from '@/shared/hooks/useApiQuery'
 import { useAuthStore, useAuthUser } from '@/shared/store/authStore'
 import './PublicLayout.css'
 
 const { Header, Content, Footer } = Layout
 
-const megaMenuGroups = [
-  {
-    title: 'Sách Trong Nước',
-    items: ['Văn học', 'Kinh tế', 'Tâm lý - Kỹ năng sống', 'Thiếu nhi', 'Giáo khoa - Tham khảo'],
-  },
-  {
-    title: 'Foreign Books',
-    items: ['Fiction', 'Business & Management', 'Children Books', 'Language Learning'],
-  },
-  {
-    title: 'VPP - Dụng Cụ Học Sinh',
-    items: ['Bút viết', 'Tập vở', 'Dụng cụ vẽ', 'Máy tính bỏ túi'],
-  },
-  {
-    title: 'Đồ Chơi',
-    items: ['Boardgame', 'Lego', 'Đồ chơi giáo dục', 'Mô hình'],
-  },
-  {
-    title: 'Làm Đẹp - Sức Khỏe',
-    items: ['Chăm sóc cá nhân', 'Sức khỏe', 'Mỹ phẩm', 'Phụ kiện'],
-  },
-  {
-    title: 'Thương Hiệu',
-    items: ['Alpha Books', 'Deli', 'Đinh Tị', 'Tân Việt Books', 'Pace Books'],
-  },
-]
-
 function PublicLayoutImpl() {
+  const { message } = App.useApp()
   const user = useAuthUser()
+  const accessToken = useAuthStore((s) => s.accessToken)
   const logout = useAuthStore((s) => s.logout)
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
+  const [newsletterEmail, setNewsletterEmail] = useState('')
   const cartQuery = useApiQuery(['cart'], () => cartApi.getCart(), {
     enabled: Boolean(user),
   })
-  const cartCount = useMemo(
-    () => cartQuery.data?.items.length ?? 0,
-    [cartQuery.data?.items]
+  const notificationsQuery = useApiQuery(
+    ['notifications'],
+    () => notificationApi.getMyNotifications(),
+    {
+      enabled: Boolean(user),
+      refetchInterval: 30_000,
+    }
+  )
+  const markAllNotificationsRead = useApiMutation(() => notificationApi.markAllAsRead(), {
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['notifications'] })
+    },
+  })
+  const markNotificationRead = useApiMutation((id: number) => notificationApi.markAsRead(id), {
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['notifications'] })
+    },
+  })
+  const newsletterMutation = useApiMutation((email: string) => newsletterApi.subscribe(email), {
+    onSuccess: (result) => {
+      setNewsletterEmail('')
+      void message.success(`Đã đăng ký nhận bản tin cho ${result.email}`)
+    },
+  })
+  const cartCount = useMemo(() => cartQuery.data?.items.length ?? 0, [cartQuery.data?.items])
+  const notifications = notificationsQuery.data ?? []
+  const unreadNotificationCount = notifications.filter((item) => !item.readAt).length
+
+  const handleNewsletterSubmit = useCallback(
+    (value: string) => {
+      const email = value.trim()
+      if (!email) {
+        void message.warning('Vui lòng nhập email')
+        return
+      }
+      newsletterMutation.mutate(email)
+    },
+    [message, newsletterMutation]
   )
 
-  const [searchValue, setSearchValue] = useState('')
-  const booksQuery = useApiQuery(['catalog', 'books', 'header-search'], () =>
-    catalogApi.getBooks()
+  const scrollToHomeSection = useCallback(
+    (sectionId: string) => (event: MouseEvent<HTMLAnchorElement>) => {
+      event.preventDefault()
+
+      if (window.location.pathname !== '/') {
+        navigate(`/#${sectionId}`)
+        return
+      }
+
+      window.history.replaceState(null, '', `/#${sectionId}`)
+      document.getElementById(sectionId)?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      })
+    },
+    [navigate]
   )
+
+  useEffect(() => {
+    if (!user || !accessToken) {
+      return undefined
+    }
+
+    const streamUrl = `${env.apiBaseUrl}/notifications/stream?token=${encodeURIComponent(accessToken)}`
+    const eventSource = new EventSource(streamUrl)
+
+    eventSource.addEventListener('notification', () => {
+      void queryClient.invalidateQueries({ queryKey: ['notifications'] })
+    })
+
+    eventSource.onerror = () => {
+      eventSource.close()
+    }
+
+    return () => eventSource.close()
+  }, [accessToken, queryClient, user])
+
+  const [searchValue, setSearchValue] = useState('')
+  const booksQuery = useApiQuery(['catalog', 'books'], () => catalogApi.getBooks())
 
   const suggestionOptions = useMemo(() => {
     const keyword = searchValue.trim().toLowerCase()
@@ -117,6 +171,9 @@ function PublicLayoutImpl() {
 
   const goLogin = useCallback(() => navigate('/auth/login'), [navigate])
   const goRegister = useCallback(() => navigate('/auth/register'), [navigate])
+  const handleLogoClick = useCallback(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+  }, [])
   const handleSearch = useCallback(
     (value: string) => {
       const keyword = value.trim()
@@ -164,18 +221,45 @@ function PublicLayoutImpl() {
     [handleLogout]
   )
 
-  const megaMenu = (
-    <div className="public-mega-menu">
-      {megaMenuGroups.map((group) => (
-        <div className="public-mega-group" key={group.title}>
-          <strong>{group.title}</strong>
-          {group.items.map((item) => (
-            <Link to="/books" key={item}>
-              {item}
-            </Link>
-          ))}
-        </div>
-      ))}
+  const notificationPanel = (
+    <div className="public-notification-panel">
+      <div className="public-notification-header">
+        <Typography.Text strong>Thông báo</Typography.Text>
+        {notifications.length > 0 ? (
+          <Button
+            type="link"
+            size="small"
+            disabled={unreadNotificationCount === 0}
+            onClick={() => markAllNotificationsRead.mutate()}
+          >
+            Đánh dấu đã đọc
+          </Button>
+        ) : null}
+      </div>
+      {notifications.length === 0 ? (
+        <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Chưa có thông báo" />
+      ) : (
+        <List
+          className="public-notification-list"
+          dataSource={notifications.slice(0, 8)}
+          renderItem={(item) => (
+            <List.Item className={item.readAt ? '' : 'unread'}>
+              <Link
+                to={item.orderId ? `/orders/${item.orderId}` : '/orders'}
+                onClick={() => {
+                  if (!item.readAt) markNotificationRead.mutate(item.id)
+                }}
+              >
+                <strong>{item.title}</strong>
+                <span>{item.message}</span>
+                {item.createdAt ? (
+                  <small>{dayjs(item.createdAt).format('DD/MM/YYYY HH:mm')}</small>
+                ) : null}
+              </Link>
+            </List.Item>
+          )}
+        />
+      )}
     </div>
   )
 
@@ -187,16 +271,10 @@ function PublicLayoutImpl() {
           <span>Hotline: 1900 0000</span>
         </div>
         <div className="public-header-main">
-          <Link to="/" className="public-logo">
+          <Link to="/" className="public-logo" onClick={handleLogoClick}>
             <BookOutlined />
             <span>SEBook</span>
           </Link>
-
-          <Popover content={megaMenu} trigger="click" placement="bottomLeft">
-            <Button className="public-category-button" icon={<MenuOutlined />}>
-              Danh mục <DownOutlined />
-            </Button>
-          </Popover>
 
           <AutoComplete
             className="public-search"
@@ -217,9 +295,13 @@ function PublicLayoutImpl() {
           </AutoComplete>
 
           <Space className="public-actions" size={14}>
-            <Button type="text" icon={<BellOutlined />}>
-              Thông báo
-            </Button>
+            <Popover content={notificationPanel} trigger="click" placement="bottomRight">
+              <Badge count={unreadNotificationCount} size="small">
+                <Button type="text" icon={<BellOutlined />}>
+                  Thông báo
+                </Button>
+              </Badge>
+            </Popover>
             <Badge count={cartCount} size="small">
               <Button type="text" icon={<ShoppingCartOutlined />} onClick={() => navigate('/cart')}>
                 Giỏ hàng
@@ -258,15 +340,23 @@ function PublicLayoutImpl() {
           <Link to="/ai">
             <RobotOutlined /> Trợ lý AI
           </Link>
-          <Link to="/#flash-sale">
+          <Link to="/#flash-sale" onClick={scrollToHomeSection('flash-sale')}>
             <AppstoreOutlined /> Flash Sale
+          </Link>
+          <Link to="/#new-books" onClick={scrollToHomeSection('new-books')}>
+            Sách mới
           </Link>
           <Link to="/books">Tất cả sách</Link>
           <Link to="/orders">Đơn hàng của tôi</Link>
-          <Link to="/#featured-categories">Danh mục nổi bật</Link>
-          <Link to="/#shopping-trends">Xu hướng mua sắm</Link>
-          <Link to="/#rankings">Bảng xếp hạng</Link>
-          <Link to="/#brands">Thương hiệu</Link>
+          <Link to="/#featured-categories" onClick={scrollToHomeSection('featured-categories')}>
+            Danh mục nổi bật
+          </Link>
+          <Link to="/#shopping-trends" onClick={scrollToHomeSection('shopping-trends')}>
+            Xu hướng mua sắm
+          </Link>
+          <Link to="/#rankings" onClick={scrollToHomeSection('rankings')}>
+            Bảng xếp hạng
+          </Link>
         </nav>
       </Header>
 
@@ -280,7 +370,15 @@ function PublicLayoutImpl() {
             <h3>Đăng ký nhận bản tin</h3>
             <p>Nhận thông tin sách mới, ưu đãi và chương trình dành riêng cho thành viên.</p>
           </div>
-          <Input.Search placeholder="Nhập email của bạn" enterButton="Đăng ký" size="large" />
+          <Input.Search
+            placeholder="Nhập email của bạn"
+            enterButton="Đăng ký"
+            size="large"
+            value={newsletterEmail}
+            loading={newsletterMutation.isPending}
+            onChange={(event) => setNewsletterEmail(event.target.value)}
+            onSearch={handleNewsletterSubmit}
+          />
         </section>
 
         <Row gutter={[24, 24]} className="public-footer-links">

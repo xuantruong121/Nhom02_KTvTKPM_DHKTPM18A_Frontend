@@ -1,9 +1,10 @@
-import { App, Button, Card, InputNumber, Space, Table, Typography } from 'antd'
+import { App, Button, Card, Input, InputNumber, Space, Table, Typography } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
 import { adminApi, type InventoryStock } from '@/modules/admin/api/adminApi'
 import { invalidateCatalogStockCaches } from '@/modules/admin/utils/invalidateAdminCaches'
+import { matchesKeyword } from '@/modules/admin/utils/search'
 import { useApiMutation, useApiQuery } from '@/shared/hooks/useApiQuery'
 
 type StockAction = {
@@ -16,6 +17,7 @@ export default function AdminImportStocksPage() {
   const { message } = App.useApp()
   const queryClient = useQueryClient()
   const [amounts, setAmounts] = useState<Record<number, number>>({})
+  const [keyword, setKeyword] = useState('')
   const inventoryQuery = useApiQuery(['admin', 'inventory'], () => adminApi.getInventory(), {
     refetchInterval: 5_000,
   })
@@ -38,6 +40,22 @@ export default function AdminImportStocksPage() {
       return byBookName || left.bookId - right.bookId
     })
   }, [bookById, inventoryQuery.data])
+
+  const inventory = useMemo(
+    () =>
+      sortedInventory.filter((stock) => {
+        const book = bookById.get(stock.bookId)
+        return matchesKeyword(
+          keyword,
+          stock.bookId,
+          stock.quantity,
+          book?.title,
+          book?.author,
+          book?.isbn
+        )
+      }),
+    [bookById, keyword, sortedInventory]
+  )
 
   const stockMutation = useApiMutation(
     (action: StockAction) =>
@@ -72,12 +90,23 @@ export default function AdminImportStocksPage() {
             <InputNumber
               min={1}
               value={amount}
-              onChange={(value) => setAmounts((prev) => ({ ...prev, [stock.bookId]: Number(value ?? 1) }))}
+              onChange={(value) =>
+                setAmounts((prev) => ({ ...prev, [stock.bookId]: Number(value ?? 1) }))
+              }
             />
-            <Button onClick={() => stockMutation.mutate({ bookId: stock.bookId, amount, mode: 'increase' })}>
+            <Button
+              onClick={() =>
+                stockMutation.mutate({ bookId: stock.bookId, amount, mode: 'increase' })
+              }
+            >
               Tăng
             </Button>
-            <Button danger onClick={() => stockMutation.mutate({ bookId: stock.bookId, amount, mode: 'decrease' })}>
+            <Button
+              danger
+              onClick={() =>
+                stockMutation.mutate({ bookId: stock.bookId, amount, mode: 'decrease' })
+              }
+            >
               Giảm
             </Button>
           </Space>
@@ -92,12 +121,21 @@ export default function AdminImportStocksPage() {
         Nhập và điều chỉnh tồn kho
       </Typography.Title>
       <Card>
-        <Table
-          rowKey="bookId"
-          columns={columns}
-          dataSource={sortedInventory}
-          loading={inventoryQuery.isLoading || booksQuery.isLoading}
-        />
+        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+          <Input.Search
+            allowClear
+            placeholder="Tim theo sach, tac gia, ISBN, Book ID"
+            style={{ maxWidth: 360 }}
+            value={keyword}
+            onChange={(event) => setKeyword(event.target.value)}
+          />
+          <Table
+            rowKey="bookId"
+            columns={columns}
+            dataSource={inventory}
+            loading={inventoryQuery.isLoading || booksQuery.isLoading}
+          />
+        </Space>
       </Card>
     </Space>
   )

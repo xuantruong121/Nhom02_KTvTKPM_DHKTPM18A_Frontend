@@ -8,6 +8,7 @@ import { useIsAuthenticated } from '@/shared/store/authStore'
 type AddToCartInput = {
   bookId: number
   quantity?: number
+  successMessage?: string | false
 }
 
 export function useAddToCart() {
@@ -21,25 +22,31 @@ export function useAddToCart() {
     cartApi.addItem({ bookId: payload.bookId, quantity: payload.quantity ?? 1 })
   )
 
-  const addToCart = async ({ bookId, quantity = 1 }: AddToCartInput) => {
+  const addToCart = async ({ bookId, quantity = 1, successMessage }: AddToCartInput) => {
     if (!isAuthenticated) {
       navigate('/auth/login', {
         state: {
           from: `${location.pathname}${location.search}`,
         },
       })
-      return
+      return false
     }
 
     await mutation.mutateAsync(
       { bookId, quantity },
       {
         onSuccess: async () => {
-          await queryClient.invalidateQueries({ queryKey: ['cart'] })
-          void message.success('Đã thêm sách vào giỏ hàng')
+          await Promise.all([
+            queryClient.invalidateQueries({ queryKey: ['cart'] }),
+            queryClient.invalidateQueries({ queryKey: ['home', 'flash-sale', 'active'] }),
+          ])
+          if (successMessage !== false) {
+            void message.success(successMessage ?? 'Đã thêm sách vào giỏ hàng')
+          }
         },
       }
     )
+    return true
   }
 
   return {

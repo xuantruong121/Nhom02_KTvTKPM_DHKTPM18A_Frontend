@@ -15,9 +15,10 @@ import type { ApiResponse } from '@/shared/api/types'
 
 export type AddressDto = {
   id: number
+  recipientName?: string
+  phoneNumber?: string
   street: string
   ward: string
-  district: string
   city: string
   isDefault: boolean
 }
@@ -37,11 +38,24 @@ export type UpdateProfileRequest = {
 }
 
 export type AddressRequest = {
+  recipientName: string
+  phoneNumber: string
   street: string
   ward: string
-  district: string
   city: string
   isDefault: boolean
+}
+
+export type AdministrativeWardDto = {
+  code: string
+  name: string
+  provinceCode?: string
+}
+
+export type AdministrativeProvinceDto = {
+  code: string
+  name: string
+  wards?: AdministrativeWardDto[]
 }
 
 // ─── API ─────────────────────────────────────────────────────────────────────
@@ -50,6 +64,11 @@ export const accountApi = {
   /** GET /api/v1/accounts/profile */
   getProfile(): Promise<ProfileDto> {
     return unwrapApi(http.get<ApiResponse<ProfileDto>>('/accounts/profile'))
+  },
+
+  /** GET /api/v1/accounts/address-units */
+  getAddressUnits(): Promise<AdministrativeProvinceDto[]> {
+    return unwrapApi(http.get<ApiResponse<AdministrativeProvinceDto[]>>('/accounts/address-units'))
   },
 
   /** POST /api/v1/accounts/profile — multipart/form-data */

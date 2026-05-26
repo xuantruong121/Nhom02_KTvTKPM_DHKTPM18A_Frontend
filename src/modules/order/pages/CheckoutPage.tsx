@@ -20,6 +20,7 @@ import {
   Empty,
   Form,
   Input,
+  Modal,
   Radio,
   Row,
   Skeleton,
@@ -30,7 +31,7 @@ import {
 import { useMemo, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { accountApi } from '@/modules/account/api/accountApi'
+import { accountApi, type AddressDto } from '@/modules/account/api/accountApi'
 import { cartApi, type Cart } from '@/modules/cart/api/cartApi'
 import { catalogApi } from '@/modules/catalog/api/catalogApi'
 import { orderApi } from '@/modules/order/api/orderApi'
@@ -51,7 +52,6 @@ type CheckoutValues = {
   customerPhone?: string
   street?: string
   ward?: string
-  district?: string
   city?: string
   shippingAddress?: string
   shippingMethod: 'STANDARD' | 'EXPRESS'
@@ -94,6 +94,7 @@ export function CheckoutPage() {
   const [promotion, setPromotion] = useState<ValidatePromotionResponse | null>(null)
   const [validatingCoupon, setValidatingCoupon] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [addressModalOpen, setAddressModalOpen] = useState(false)
 
   const cartQuery = useApiQuery(['cart'], () => cartApi.getCart())
   const profileQuery = useApiQuery(['account', 'profile'], () => accountApi.getProfile())
@@ -120,6 +121,9 @@ export function CheckoutPage() {
   )
   const addresses = profileQuery.data?.addresses ?? []
   const defaultAddress = addresses.find((address) => address.isDefault) ?? addresses[0]
+  const selectedAddressId = Form.useWatch('addressId', form)
+  const selectedSavedAddress =
+    addresses.find((address) => address.id === selectedAddressId) ?? defaultAddress
   const subtotal = useMemo(
     () => items.reduce((sum, item) => sum + toNumber(item.price) * item.quantity, 0),
     [items]
@@ -151,20 +155,51 @@ export function CheckoutPage() {
   }
 
   const buildCustomAddress = (values: CheckoutValues) =>
-    [values.street, values.ward, values.district, values.city].filter(Boolean).join(', ')
+    [values.street, values.ward, values.city].filter(Boolean).join(', ')
+
+  const getAddressRecipientName = (address?: typeof defaultAddress | null) =>
+    address?.recipientName || profileQuery.data?.fullName || ''
+
+  const getAddressPhone = (address?: typeof defaultAddress | null) =>
+    address?.phoneNumber || profileQuery.data?.phoneNumber || ''
+
+  const renderAddressContact = (address?: AddressDto | null) => (
+    <>
+      <strong>{getAddressRecipientName(address)}</strong>
+      <span>{getAddressPhone(address)}</span>
+      <small>{address ? compactAddress(address) : 'Chưa chọn địa chỉ giao hàng'}</small>
+    </>
+  )
+
+  const selectSavedAddress = (addressId: number) => {
+    const selected = addresses.find((address) => address.id === addressId)
+    form.setFieldsValue({
+      addressId,
+      recipientName: getAddressRecipientName(selected),
+      customerPhone: getAddressPhone(selected),
+    })
+  }
 
   const handleFinish = async (values: CheckoutValues) => {
     if (items.length === 0) return
     const selectedAddress =
       values.addressMode === 'saved'
-        ? addresses.find((address) => address.id === values.addressId) ?? defaultAddress
+        ? (addresses.find((address) => address.id === values.addressId) ?? defaultAddress)
         : null
     const shippingAddress = selectedAddress
       ? compactAddress(selectedAddress)
       : buildCustomAddress(values) || values.shippingAddress?.trim()
+    const customerPhone = selectedAddress
+      ? getAddressPhone(selectedAddress)
+      : values.customerPhone?.trim() || profileQuery.data?.phoneNumber
 
     if (!shippingAddress) {
       void message.error('Vui lòng nhập địa chỉ giao hàng')
+      return
+    }
+
+    if (!customerPhone) {
+      void message.error('Vui lòng nhập số điện thoại nhận hàng')
       return
     }
 
@@ -173,7 +208,7 @@ export function CheckoutPage() {
       const order = await orderApi.checkout({
         requestId: makeRequestId(),
         shippingAddress,
-        customerPhone: values.customerPhone?.trim() || profileQuery.data?.phoneNumber,
+        customerPhone,
         couponCode: promotion?.valid ? couponCode.trim() : undefined,
         paymentMethod: values.paymentMethod,
         selectedBookIds: selectedBookIds.length > 0 ? selectedBookIds : undefined,
@@ -252,8 +287,8 @@ export function CheckoutPage() {
           initialValues={{
             addressMode: defaultAddress ? 'saved' : 'custom',
             addressId: defaultAddress?.id,
-            recipientName: profileQuery.data?.fullName,
-            customerPhone: profileQuery.data?.phoneNumber,
+            recipientName: getAddressRecipientName(defaultAddress),
+            customerPhone: getAddressPhone(defaultAddress),
             shippingMethod: 'STANDARD',
             paymentMethod: 'VNPAY',
             invoiceType: 'PERSONAL',
@@ -285,7 +320,7 @@ export function CheckoutPage() {
                   </Radio.Group>
                 </Form.Item>
 
-                <Row gutter={12}>
+                <Row gutter={12} className="checkout-recipient-fields">
                   <Col xs={24} md={12}>
                     <Form.Item
                       label="Họ và tên người nhận"
@@ -306,24 +341,45 @@ export function CheckoutPage() {
                   </Col>
                 </Row>
 
-                <Form.Item noStyle shouldUpdate={(prev, cur) => prev.addressMode !== cur.addressMode}>
+                <Form.Item
+                  noStyle
+                  shouldUpdate={(prev, cur) => prev.addressMode !== cur.addressMode}
+                >
                   {({ getFieldValue }) =>
                     getFieldValue('addressMode') === 'saved' && addresses.length > 0 ? (
-                      <Form.Item
-                        name="addressId"
-                        rules={[{ required: true, message: 'Chọn địa chỉ giao hàng' }]}
-                      >
-                        <Radio.Group className="checkout-address-list">
-                          {addresses.map((address) => (
-                            <Radio.Button value={address.id} key={address.id}>
-                              <strong>{address.street}</strong>
-                              <span>
-                                {address.ward}, {address.district}, {address.city}
-                              </span>
-                            </Radio.Button>
-                          ))}
-                        </Radio.Group>
-                      </Form.Item>
+                      <>
+                        <div className="checkout-selected-address">
+                          <div>{renderAddressContact(selectedSavedAddress)}</div>
+                          <Button onClick={() => setAddressModalOpen(true)}>Thay đổi</Button>
+                        </div>
+                        <Form.Item
+                          name="addressId"
+                          rules={[{ required: true, message: 'Chọn địa chỉ giao hàng' }]}
+                        >
+                          <Radio.Group
+                            className="checkout-address-list"
+                            onChange={(event) => {
+                              const selected = addresses.find(
+                                (address) => address.id === event.target.value
+                              )
+                              form.setFieldsValue({
+                                recipientName: getAddressRecipientName(selected),
+                                customerPhone: getAddressPhone(selected),
+                              })
+                            }}
+                          >
+                            {addresses.map((address) => (
+                              <Radio.Button value={address.id} key={address.id}>
+                                <strong>{getAddressRecipientName(address)}</strong>
+                                <span>
+                                  {getAddressPhone(address)} - {address.street}, {address.ward},{' '}
+                                  {address.city}
+                                </span>
+                              </Radio.Button>
+                            ))}
+                          </Radio.Group>
+                        </Form.Item>
+                      </>
                     ) : (
                       <div className="checkout-address-fields">
                         <Form.Item
@@ -345,15 +401,6 @@ export function CheckoutPage() {
                           </Col>
                           <Col xs={24} md={8}>
                             <Form.Item
-                              label="Quận / Huyện"
-                              name="district"
-                              rules={[{ required: true, message: 'Nhập quận/huyện' }]}
-                            >
-                              <Input placeholder="VD: Gò Vấp" />
-                            </Form.Item>
-                          </Col>
-                          <Col xs={24} md={8}>
-                            <Form.Item
                               label="Tỉnh / Thành phố"
                               name="city"
                               rules={[{ required: true, message: 'Nhập tỉnh/thành phố' }]}
@@ -368,7 +415,10 @@ export function CheckoutPage() {
                 </Form.Item>
 
                 <Form.Item label="Ghi chú giao hàng" name="note">
-                  <Input.TextArea rows={2} placeholder="VD: Giao giờ hành chính, gọi trước khi giao" />
+                  <Input.TextArea
+                    rows={2}
+                    placeholder="VD: Giao giờ hành chính, gọi trước khi giao"
+                  />
                 </Form.Item>
               </Card>
 
@@ -451,8 +501,9 @@ export function CheckoutPage() {
                     getFieldValue('needInvoice') ? (
                       <div className="checkout-invoice-box">
                         <p className="checkout-invoice-warning">
-                          *Từ 01/07/2025, Quý khách chịu trách nhiệm về thông tin địa chỉ xuất Hóa đơn theo quy định Hành chính mới.
-                          SEBook sẽ không xuất lại hóa đơn nếu thông tin không đúng.
+                          *Từ 01/07/2025, Quý khách chịu trách nhiệm về thông tin địa chỉ xuất Hóa
+                          đơn theo quy định Hành chính mới. SEBook sẽ không xuất lại hóa đơn nếu
+                          thông tin không đúng.
                         </p>
                         <Form.Item name="invoiceType">
                           <Radio.Group className="checkout-invoice-type">
@@ -558,7 +609,11 @@ export function CheckoutPage() {
                     return (
                       <div className="checkout-item" key={item.bookId}>
                         <div className="checkout-thumb">
-                          {book?.imageUrl ? <img src={book.imageUrl} alt={item.title} /> : <ShoppingCartOutlined />}
+                          {book?.imageUrl ? (
+                            <img src={book.imageUrl} alt={item.title} />
+                          ) : (
+                            <ShoppingCartOutlined />
+                          )}
                         </div>
                         <div>
                           <Link to={`/books/${item.bookId}`}>{item.title}</Link>
@@ -608,7 +663,10 @@ export function CheckoutPage() {
                 )}
               </Card>
 
-              <Card className="se-card checkout-section checkout-summary" title="Thông tin thanh toán">
+              <Card
+                className="se-card checkout-section checkout-summary"
+                title="Thông tin thanh toán"
+              >
                 <div className="checkout-total-row">
                   <span>Tạm tính</span>
                   <strong>{formatMoney(subtotal)}</strong>
@@ -637,7 +695,9 @@ export function CheckoutPage() {
                   rules={[
                     {
                       validator: (_, checked) =>
-                        checked ? Promise.resolve() : Promise.reject(new Error('Vui lòng xác nhận điều khoản')),
+                        checked
+                          ? Promise.resolve()
+                          : Promise.reject(new Error('Vui lòng xác nhận điều khoản')),
                     },
                   ]}
                 >
@@ -651,6 +711,30 @@ export function CheckoutPage() {
             </aside>
           </div>
         </Form>
+        <Modal
+          open={addressModalOpen}
+          title="Chọn địa chỉ giao hàng"
+          onCancel={() => setAddressModalOpen(false)}
+          footer={null}
+          destroyOnClose
+        >
+          <Radio.Group
+            className="checkout-address-modal-list"
+            value={selectedSavedAddress?.id}
+            onChange={(event) => {
+              selectSavedAddress(event.target.value)
+              setAddressModalOpen(false)
+            }}
+          >
+            {addresses.map((address) => (
+              <Radio.Button value={address.id} key={address.id}>
+                <strong>{getAddressRecipientName(address)}</strong>
+                <span>{getAddressPhone(address)}</span>
+                <small>{compactAddress(address)}</small>
+              </Radio.Button>
+            ))}
+          </Radio.Group>
+        </Modal>
       </section>
     </main>
   )

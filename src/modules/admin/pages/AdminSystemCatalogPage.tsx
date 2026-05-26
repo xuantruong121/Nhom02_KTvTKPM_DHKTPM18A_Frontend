@@ -1,7 +1,8 @@
-import { Card, Space, Table, Tabs, Typography } from 'antd'
+import { Card, Input, Space, Table, Tabs, Typography } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { adminApi } from '@/modules/admin/api/adminApi'
+import { matchesKeyword } from '@/modules/admin/utils/search'
 import CategoryManagementPage from '@/modules/catalog/pages/CategoryManagementPage'
 import { useApiQuery } from '@/shared/hooks/useApiQuery'
 
@@ -11,6 +12,7 @@ type AuthorRow = {
 }
 
 export default function AdminSystemCatalogPage() {
+  const [authorKeyword, setAuthorKeyword] = useState('')
   const booksQuery = useApiQuery(['admin', 'books', 'authors'], () => adminApi.getBooks())
 
   const authors = useMemo<AuthorRow[]>(() => {
@@ -24,6 +26,11 @@ export default function AdminSystemCatalogPage() {
       .map(([name, bookCount]) => ({ name, bookCount }))
       .sort((left, right) => left.name.localeCompare(right.name, 'vi'))
   }, [booksQuery.data])
+
+  const filteredAuthors = useMemo(
+    () => authors.filter((author) => matchesKeyword(authorKeyword, author.name, author.bookCount)),
+    [authorKeyword, authors]
+  )
 
   const authorColumns: ColumnsType<AuthorRow> = [
     { title: 'Tác giả', dataIndex: 'name' },
@@ -47,13 +54,22 @@ export default function AdminSystemCatalogPage() {
             label: 'Tác giả',
             children: (
               <Card>
-                <Table
-                  rowKey="name"
-                  columns={authorColumns}
-                  dataSource={authors}
-                  loading={booksQuery.isLoading}
-                  pagination={{ pageSize: 10 }}
-                />
+                <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+                  <Input.Search
+                    allowClear
+                    placeholder="Tim theo ten tac gia"
+                    style={{ maxWidth: 320 }}
+                    value={authorKeyword}
+                    onChange={(event) => setAuthorKeyword(event.target.value)}
+                  />
+                  <Table
+                    rowKey="name"
+                    columns={authorColumns}
+                    dataSource={filteredAuthors}
+                    loading={booksQuery.isLoading}
+                    pagination={{ pageSize: 10 }}
+                  />
+                </Space>
               </Card>
             ),
           },

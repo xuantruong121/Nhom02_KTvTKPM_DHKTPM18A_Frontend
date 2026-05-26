@@ -30,6 +30,18 @@ export type TopBook = {
   revenue: Money
 }
 
+export type BookSalesStat = {
+  bookId: number
+  title: string
+  quantitySold: number
+  revenue: Money
+}
+
+export type BookSalesFilters = {
+  from?: string
+  to?: string
+}
+
 export type OrderItem = {
   bookId: number
   title?: string
@@ -108,6 +120,45 @@ export type CouponPayload = {
   isActive: boolean
 }
 
+export type FlashSale = {
+  id: number
+  bookId: number
+  title: string
+  author?: string
+  imageUrl?: string
+  price: Money
+  salePrice: Money
+  saleQuantity: number
+  discountPercent: number
+  startAt: string
+  endAt: string
+  active: boolean
+}
+
+export type FlashSalePayload = {
+  bookId: number
+  saleQuantity: number
+  discountPercent: number
+  startAt: string
+  endAt: string
+  active: boolean
+}
+
+export type AdminReview = {
+  id: number
+  bookId: number
+  bookTitle: string
+  userId: number
+  reviewerName?: string
+  reviewerEmail?: string
+  rating: number
+  content?: string | null
+  editCount: number
+  canEdit: boolean
+  createdAt?: string
+  updatedAt?: string
+}
+
 export type Supplier = {
   id: number
   name: string
@@ -122,7 +173,13 @@ export type Supplier = {
 
 export type SupplierPayload = Omit<Supplier, 'id' | 'createdAt' | 'updatedAt'>
 
-export type PurchaseOrderStatus = 'DRAFT' | 'SUBMITTED' | 'APPROVED' | 'RETURNED' | 'RECEIVED' | 'CANCELLED'
+export type PurchaseOrderStatus =
+  | 'DRAFT'
+  | 'SUBMITTED'
+  | 'APPROVED'
+  | 'RETURNED'
+  | 'RECEIVED'
+  | 'CANCELLED'
 
 export type PurchaseOrder = {
   id: number
@@ -270,6 +327,9 @@ export const adminApi = {
   getOrder(id: number) {
     return unwrapApi<AdminOrder>(httpV2.get(`/admin/orders/${id}`))
   },
+  getBookSales(params?: BookSalesFilters) {
+    return unwrapApi<BookSalesStat[]>(httpV2.get('/admin/orders/book-sales', { params }))
+  },
   updateOrderStatus(id: number, newStatus: FulfillmentStatus, reason?: string) {
     return unwrapApi<AdminOrder>(httpV2.put(`/admin/orders/${id}/status`, { newStatus, reason }))
   },
@@ -283,7 +343,9 @@ export const adminApi = {
     return unwrapApi<AdminOrder>(httpV2.put(`/admin/orders/${id}/complete`))
   },
   cancelOrder(id: number, reason?: string) {
-    return unwrapApi<AdminOrder>(httpV2.put(`/admin/orders/${id}/cancel`, reason ? { reason } : undefined))
+    return unwrapApi<AdminOrder>(
+      httpV2.put(`/admin/orders/${id}/cancel`, reason ? { reason } : undefined)
+    )
   },
   getReturns() {
     return unwrapApi<ReturnRequest[]>(http.get('/admin/returns'))
@@ -298,7 +360,9 @@ export const adminApi = {
     return unwrapApi<void>(http.put(`/admin/returns/${id}/refund`))
   },
   rejectReturn(id: string, reason: string) {
-    return unwrapApi<void>(http.put(`/admin/returns/${id}/reject`, undefined, { params: { reason } }))
+    return unwrapApi<void>(
+      http.put(`/admin/returns/${id}/reject`, undefined, { params: { reason } })
+    )
   },
   getCoupons() {
     return unwrapApi<Coupon[]>(http.get('/admin/coupons'))
@@ -314,6 +378,24 @@ export const adminApi = {
   },
   deleteCoupon(id: number) {
     return unwrapApi<void>(http.delete(`/admin/coupons/${id}`))
+  },
+  getFlashSales() {
+    return unwrapApi<FlashSale[]>(http.get('/admin/flash-sales'))
+  },
+  createFlashSale(payload: FlashSalePayload) {
+    return unwrapApi<FlashSale>(http.post('/admin/flash-sales', payload))
+  },
+  updateFlashSale(id: number, payload: FlashSalePayload) {
+    return unwrapApi<FlashSale>(http.put(`/admin/flash-sales/${id}`, payload))
+  },
+  deleteFlashSale(id: number) {
+    return unwrapApi<void>(http.delete(`/admin/flash-sales/${id}`))
+  },
+  getReviews() {
+    return unwrapApi<AdminReview[]>(http.get('/admin/reviews'))
+  },
+  deleteReview(id: number) {
+    return unwrapApi<void>(http.delete(`/admin/reviews/${id}`))
   },
   getSuppliers() {
     return unwrapApi<Supplier[]>(http.get('/logistics/suppliers'))

@@ -2,16 +2,18 @@ import {
   DashboardOutlined,
   BookOutlined,
   GiftOutlined,
+  FireOutlined,
   FileSearchOutlined,
   LogoutOutlined,
   ProfileOutlined,
   RobotOutlined,
-  SettingOutlined,
   ShopOutlined,
   StockOutlined,
   TagsOutlined,
   TeamOutlined,
   UserOutlined,
+  SettingOutlined,
+  StarOutlined,
 } from '@ant-design/icons'
 import { Avatar, Layout, Menu, Space, Typography } from 'antd'
 import type { MenuProps } from 'antd'
@@ -29,21 +31,67 @@ const MENU_ITEMS: MenuProps['items'] = [
   { key: '/admin', icon: <DashboardOutlined />, label: <Link to="/admin">Dashboard</Link> },
   { key: '/admin/ai', icon: <RobotOutlined />, label: <Link to="/admin/ai">AI</Link> },
   { key: '/admin/books', icon: <BookOutlined />, label: <Link to="/admin/books">Sách</Link> },
-  { key: '/admin/categories', icon: <TagsOutlined />, label: <Link to="/admin/categories">Danh mục</Link> },
-  { key: '/admin/system/catalog', icon: <SettingOutlined />, label: <Link to="/admin/system/catalog">Cấu hình catalog</Link> },
-  { key: '/admin/orders', icon: <ProfileOutlined />, label: <Link to="/admin/orders">Đơn hàng</Link> },
-  { key: '/admin/returns', icon: <ProfileOutlined />, label: <Link to="/admin/returns">Trả hàng</Link> },
+  {
+    key: '/admin/flash-sales',
+    icon: <FireOutlined />,
+    label: <Link to="/admin/flash-sales">Flash Sale</Link>,
+  },
+  {
+    key: '/admin/reviews',
+    icon: <StarOutlined />,
+    label: <Link to="/admin/reviews">Đánh giá</Link>,
+  },
+  {
+    key: '/admin/categories',
+    icon: <TagsOutlined />,
+    label: <Link to="/admin/categories">Danh mục</Link>,
+  },
+  {
+    key: '/admin/system/catalog',
+    icon: <SettingOutlined />,
+    label: <Link to="/admin/system/catalog">Cấu hình catalog</Link>,
+  },
+  {
+    key: '/admin/orders',
+    icon: <ProfileOutlined />,
+    label: <Link to="/admin/orders">Đơn hàng</Link>,
+  },
+  {
+    key: '/admin/returns',
+    icon: <ProfileOutlined />,
+    label: <Link to="/admin/returns">Trả hàng</Link>,
+  },
   {
     key: '/admin/promotions',
     icon: <GiftOutlined />,
     label: <Link to="/admin/promotions">Khuyến mãi</Link>,
   },
   { key: '/admin/users', icon: <TeamOutlined />, label: <Link to="/admin/users">Người dùng</Link> },
-  { key: '/admin/audit-logs', icon: <FileSearchOutlined />, label: <Link to="/admin/audit-logs">Nhật ký</Link> },
-  { key: '/admin/suppliers', icon: <ShopOutlined />, label: <Link to="/admin/suppliers">Nhà cung cấp</Link> },
-  { key: '/admin/purchase-orders', icon: <ShopOutlined />, label: <Link to="/admin/purchase-orders">PO mua hàng</Link> },
-  { key: '/admin/stock-check', icon: <StockOutlined />, label: <Link to="/admin/stock-check">Kiểm kho</Link> },
-  { key: '/admin/inventory', icon: <StockOutlined />, label: <Link to="/admin/inventory">Tồn kho</Link> },
+  {
+    key: '/admin/audit-logs',
+    icon: <FileSearchOutlined />,
+    label: <Link to="/admin/audit-logs">Nhật ký</Link>,
+  },
+  {
+    key: '/admin/suppliers',
+    icon: <ShopOutlined />,
+    label: <Link to="/admin/suppliers">Nhà cung cấp</Link>,
+  },
+  {
+    key: '/admin/purchase-orders',
+    icon: <ShopOutlined />,
+    label: <Link to="/admin/purchase-orders">PO mua hàng</Link>,
+  },
+  {
+    key: '/admin/stock-check',
+    icon: <StockOutlined />,
+    label: <Link to="/admin/stock-check">Kiểm kho</Link>,
+  },
+  {
+    key: '/admin/inventory',
+    icon: <StockOutlined />,
+    label: <Link to="/admin/inventory">Tồn kho</Link>,
+  },
 ]
 
 function AdminLayoutImpl() {

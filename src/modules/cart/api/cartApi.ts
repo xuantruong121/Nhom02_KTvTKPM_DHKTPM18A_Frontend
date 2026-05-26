@@ -31,6 +31,9 @@ export const cartApi = {
   addItem(payload: AddCartItemRequest) {
     return unwrapApi<string>(http.post('/cart/items', payload))
   },
+  addFlashSaleItem(payload: AddCartItemRequest) {
+    return unwrapApi<string>(http.post('/cart/flash-sale/items', payload))
+  },
   updateItem(payload: UpdateCartItemRequest) {
     return unwrapApi<string>(http.put('/cart/items', payload))
   },

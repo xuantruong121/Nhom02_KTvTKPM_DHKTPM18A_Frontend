@@ -1,25 +1,30 @@
 import { App, Button, Card, Form, Input, Modal, Popconfirm, Space, Table, Typography } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { adminApi, type Supplier, type SupplierPayload } from '@/modules/admin/api/adminApi'
+import { matchesKeyword } from '@/modules/admin/utils/search'
 import { useApiMutation, useApiQuery } from '@/shared/hooks/useApiQuery'
 
 export default function AdminSuppliersPage() {
   const { message } = App.useApp()
   const [open, setOpen] = useState(false)
+  const [keyword, setKeyword] = useState('')
   const [form] = Form.useForm<SupplierPayload>()
   const queryClient = useQueryClient()
   const suppliersQuery = useApiQuery(['admin', 'suppliers'], () => adminApi.getSuppliers())
 
-  const createMutation = useApiMutation((payload: SupplierPayload) => adminApi.createSupplier(payload), {
-    onSuccess: async () => {
-      void message.success('Đã tạo nhà cung cấp')
-      setOpen(false)
-      form.resetFields()
-      await queryClient.invalidateQueries({ queryKey: ['admin', 'suppliers'] })
-    },
-  })
+  const createMutation = useApiMutation(
+    (payload: SupplierPayload) => adminApi.createSupplier(payload),
+    {
+      onSuccess: async () => {
+        void message.success('Đã tạo nhà cung cấp')
+        setOpen(false)
+        form.resetFields()
+        await queryClient.invalidateQueries({ queryKey: ['admin', 'suppliers'] })
+      },
+    }
+  )
 
   const deleteMutation = useApiMutation((id: number) => adminApi.deleteSupplier(id), {
     onSuccess: async () => {
@@ -27,6 +32,22 @@ export default function AdminSuppliersPage() {
       await queryClient.invalidateQueries({ queryKey: ['admin', 'suppliers'] })
     },
   })
+
+  const suppliers = useMemo(
+    () =>
+      (suppliersQuery.data ?? []).filter((supplier) =>
+        matchesKeyword(
+          keyword,
+          supplier.name,
+          supplier.contactPerson,
+          supplier.phoneNumber,
+          supplier.email,
+          supplier.address,
+          supplier.taxCode
+        )
+      ),
+    [keyword, suppliersQuery.data]
+  )
 
   const columns: ColumnsType<Supplier> = [
     { title: 'Tên', dataIndex: 'name' },
@@ -65,7 +86,21 @@ export default function AdminSuppliersPage() {
         </Button>
       </Space>
       <Card>
-        <Table rowKey="id" columns={columns} dataSource={suppliersQuery.data ?? []} loading={suppliersQuery.isLoading} />
+        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+          <Input.Search
+            allowClear
+            placeholder="Tim theo ten, lien he, SĐT, email, ma so thue"
+            style={{ maxWidth: 420 }}
+            value={keyword}
+            onChange={(event) => setKeyword(event.target.value)}
+          />
+          <Table
+            rowKey="id"
+            columns={columns}
+            dataSource={suppliers}
+            loading={suppliersQuery.isLoading}
+          />
+        </Space>
       </Card>
       <Modal
         title="Tạo nhà cung cấp"

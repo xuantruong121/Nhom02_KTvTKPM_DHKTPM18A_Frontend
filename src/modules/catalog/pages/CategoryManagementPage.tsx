@@ -1,7 +1,20 @@
-import { App, Button, Card, Form, Input, Modal, Popconfirm, Space, Table, Tag, Typography } from 'antd'
+import {
+  App,
+  Button,
+  Card,
+  Form,
+  Input,
+  Modal,
+  Popconfirm,
+  Space,
+  Table,
+  Tag,
+  Typography,
+} from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo, useState } from 'react'
+import { matchesKeyword } from '@/modules/admin/utils/search'
 import { catalogApi, type Category, type CategoryPayload } from '@/modules/catalog/api/catalogApi'
 import { useApiMutation, useApiQuery } from '@/shared/hooks/useApiQuery'
 
@@ -18,6 +31,7 @@ export default function CategoryManagementPage({ area }: CategoryManagementPageP
   const queryClient = useQueryClient()
   const [open, setOpen] = useState(false)
   const [editingCategory, setEditingCategory] = useState<Category | null>(null)
+  const [keyword, setKeyword] = useState('')
   const [form] = Form.useForm<CategoryPayload>()
 
   const categoriesQuery = useApiQuery([area, 'categories'], () => catalogApi.getCategories())
@@ -39,7 +53,9 @@ export default function CategoryManagementPage({ area }: CategoryManagementPageP
 
   const saveMutation = useApiMutation(
     (payload: CategoryPayload) =>
-      editingCategory ? catalogApi.updateCategory(editingCategory.id, payload) : catalogApi.createCategory(payload),
+      editingCategory
+        ? catalogApi.updateCategory(editingCategory.id, payload)
+        : catalogApi.createCategory(payload),
     {
       onSuccess: async () => {
         void message.success(editingCategory ? 'Đã cập nhật danh mục' : 'Đã tạo danh mục')
@@ -59,8 +75,18 @@ export default function CategoryManagementPage({ area }: CategoryManagementPageP
   })
 
   const sortedCategories = useMemo(
-    () => [...(categoriesQuery.data ?? [])].sort((left, right) => left.name.localeCompare(right.name, 'vi')),
-    [categoriesQuery.data]
+    () =>
+      [...(categoriesQuery.data ?? [])]
+        .filter((category) =>
+          matchesKeyword(
+            keyword,
+            category.id,
+            category.name,
+            isCategoryActive(category) ? 'active' : 'inactive'
+          )
+        )
+        .sort((left, right) => left.name.localeCompare(right.name, 'vi')),
+    [categoriesQuery.data, keyword]
   )
 
   const columns: ColumnsType<Category> = [
@@ -73,7 +99,11 @@ export default function CategoryManagementPage({ area }: CategoryManagementPageP
       title: 'Trạng thái',
       width: 140,
       render: (_, category) =>
-        isCategoryActive(category) ? <Tag color="green">Đang bán</Tag> : <Tag color="red">Đã ẩn</Tag>,
+        isCategoryActive(category) ? (
+          <Tag color="green">Đang bán</Tag>
+        ) : (
+          <Tag color="red">Đã ẩn</Tag>
+        ),
     },
     {
       title: '',
@@ -125,13 +155,22 @@ export default function CategoryManagementPage({ area }: CategoryManagementPageP
       </Space>
 
       <Card>
-        <Table
-          rowKey="id"
-          columns={columns}
-          dataSource={sortedCategories}
-          loading={categoriesQuery.isLoading}
-          pagination={{ pageSize: 10 }}
-        />
+        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+          <Input.Search
+            allowClear
+            placeholder="Tim theo ten danh muc"
+            style={{ maxWidth: 320 }}
+            value={keyword}
+            onChange={(event) => setKeyword(event.target.value)}
+          />
+          <Table
+            rowKey="id"
+            columns={columns}
+            dataSource={sortedCategories}
+            loading={categoriesQuery.isLoading}
+            pagination={{ pageSize: 10 }}
+          />
+        </Space>
       </Card>
 
       <Modal

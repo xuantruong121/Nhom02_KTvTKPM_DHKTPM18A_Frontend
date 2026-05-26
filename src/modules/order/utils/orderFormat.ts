@@ -48,11 +48,6 @@ export function getReturnStatusMeta(status?: ReturnStatus | null) {
   return returnStatusMeta[String(status ?? '')] ?? { label: status || 'Không rõ', color: 'default' }
 }
 
-export function compactAddress(address: {
-  street: string
-  ward: string
-  district: string
-  city: string
-}) {
-  return [address.street, address.ward, address.district, address.city].filter(Boolean).join(', ')
+export function compactAddress(address: { street: string; ward: string; city: string }) {
+  return [address.street, address.ward, address.city].filter(Boolean).join(', ')
 }

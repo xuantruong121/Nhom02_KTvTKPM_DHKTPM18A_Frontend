@@ -9,6 +9,8 @@ import {
   TruckOutlined,
 } from '@ant-design/icons'
 import {
+  App,
+  Avatar,
   Button,
   Card,
   Col,
@@ -16,8 +18,12 @@ import {
   Divider,
   Empty,
   Flex,
+  Form,
   Image,
+  Input,
   InputNumber,
+  List,
+  Modal,
   Progress,
   Rate,
   Row,
@@ -26,12 +32,16 @@ import {
   Tag,
   Typography,
 } from 'antd'
-import { useMemo, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
+import dayjs from 'dayjs'
+import { useEffect, useMemo, useState } from 'react'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { catalogApi, type Book, type Category } from '@/modules/catalog/api/catalogApi'
 import { BookCard } from '@/modules/catalog/components/BookCard'
 import { useAddToCart } from '@/modules/cart/hooks/useAddToCart'
-import { useApiQuery } from '@/shared/hooks/useApiQuery'
+import { homeApi } from '@/modules/home/api/homeApi'
+import { useApiMutation, useApiQuery } from '@/shared/hooks/useApiQuery'
+import { useIsAuthenticated } from '@/shared/store/authStore'
 import './BookDetailPage.css'
 
 const currencyFormatter = new Intl.NumberFormat('vi-VN', {
@@ -65,19 +75,77 @@ function getCategoryNames(book: Book, categories: Category[]) {
   return categories.filter((category) => ids.includes(category.id)).map((category) => category.name)
 }
 
+function getRemainingTime(targetAt?: string | null) {
+  if (!targetAt) return { total: 0, hours: '00', minutes: '00', seconds: '00' }
+  const total = Math.max(0, dayjs(targetAt).diff(dayjs(), 'second'))
+  const hours = String(Math.floor(total / 3600)).padStart(2, '0')
+  const minutes = String(Math.floor((total % 3600) / 60)).padStart(2, '0')
+  const seconds = String(total % 60).padStart(2, '0')
+  return { total, hours, minutes, seconds }
+}
+
 export function BookDetailPage() {
+  const { message } = App.useApp()
   const params = useParams<{ id: string }>()
+  const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const bookId = Number(params.id)
   const [quantity, setQuantity] = useState(1)
+  const [saleRemaining, setSaleRemaining] = useState(() => getRemainingTime(null))
+  const [reviewOpen, setReviewOpen] = useState(false)
+  const [reviewForm] = Form.useForm<{ rating: number; content?: string }>()
+  const isAuthenticated = useIsAuthenticated()
   const { addToCart, isPending: isAddingToCart } = useAddToCart()
 
   const bookQuery = useApiQuery(['catalog', 'book', bookId], () => catalogApi.getBook(bookId), {
     enabled: Number.isFinite(bookId),
   })
   const categoriesQuery = useApiQuery(['catalog', 'categories'], () => catalogApi.getCategories())
-  const booksQuery = useApiQuery(['catalog', 'books', 'related'], () => catalogApi.getBooks())
+  const booksQuery = useApiQuery(['catalog', 'books'], () => catalogApi.getBooks())
+  const reviewsQuery = useApiQuery(
+    ['catalog', 'book', bookId, 'reviews'],
+    () => catalogApi.getBookReviews(bookId),
+    { enabled: Number.isFinite(bookId) }
+  )
+  const myReviewQuery = useApiQuery(
+    ['catalog', 'book', bookId, 'reviews', 'me'],
+    () => catalogApi.getMyBookReview(bookId),
+    { enabled: Number.isFinite(bookId) && isAuthenticated }
+  )
+  const activeFlashSaleQuery = useApiQuery(
+    ['home', 'flash-sale', 'active'],
+    () => homeApi.getActiveFlashSale(),
+    {
+      refetchInterval: 30_000,
+    }
+  )
 
-  const book = bookQuery.data
+  const catalogBook = bookQuery.data
+  const activeFlashSaleItem = activeFlashSaleQuery.data?.items.find(
+    (item) => item.bookId === bookId
+  )
+  const saleIsRunning =
+    activeFlashSaleItem &&
+    dayjs().isAfter(dayjs(activeFlashSaleItem.startAt)) &&
+    dayjs().isBefore(dayjs(activeFlashSaleItem.endAt)) &&
+    activeFlashSaleItem.saleQuantity > 0
+  const book =
+    catalogBook && saleIsRunning
+      ? {
+          ...catalogBook,
+          price: activeFlashSaleItem.salePrice,
+          originalPrice: activeFlashSaleItem.price,
+          quantity: activeFlashSaleItem.saleQuantity,
+        }
+      : catalogBook
+
+  useEffect(() => {
+    const updateRemaining = () => setSaleRemaining(getRemainingTime(activeFlashSaleItem?.endAt))
+    updateRemaining()
+    const timer = window.setInterval(updateRemaining, 1000)
+    return () => window.clearInterval(timer)
+  }, [activeFlashSaleItem?.endAt])
+
   const categories = useMemo(
     () => (categoriesQuery.data ?? []).filter(isActive),
     [categoriesQuery.data]
@@ -91,6 +159,28 @@ export function BookDetailPage() {
       .filter((item) => item.categoryIds?.some((id) => ids.includes(id)))
       .slice(0, 4)
   }, [book, booksQuery.data])
+
+  const submitReviewMutation = useApiMutation(
+    (values: { rating: number; content?: string }) => catalogApi.submitBookReview(bookId, values),
+    {
+      onSuccess: async () => {
+        void message.success('Đã lưu đánh giá')
+        setReviewOpen(false)
+        reviewForm.resetFields()
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ['catalog', 'book', bookId] }),
+          queryClient.invalidateQueries({ queryKey: ['catalog', 'book', bookId, 'reviews'] }),
+          queryClient.invalidateQueries({ queryKey: ['catalog', 'book', bookId, 'reviews', 'me'] }),
+        ])
+      },
+    }
+  )
+
+  useEffect(() => {
+    if (book && quantity > Math.max(1, book.quantity)) {
+      setQuantity(Math.max(1, book.quantity))
+    }
+  }, [book, quantity])
 
   if (bookQuery.isLoading) {
     return (
@@ -115,7 +205,43 @@ export function BookDetailPage() {
   const discount = getDiscount(book)
   const categoryNames = getCategoryNames(book, categories)
   const rating = toNumber(book.averageRating)
+  const reviews = reviewsQuery.data ?? []
+  const myReview = myReviewQuery.data
+  const reviewDistribution = [5, 4, 3, 2, 1].map((star) => {
+    const count = reviews.filter((review) => review.rating === star).length
+    return {
+      star,
+      percent: reviews.length ? Math.round((count / reviews.length) * 100) : 0,
+    }
+  })
   const stock = book.quantity
+  const openReviewModal = () => {
+    if (!isAuthenticated) {
+      void message.info('Vui lòng đăng nhập để viết đánh giá')
+      navigate('/auth/login')
+      return
+    }
+    if (myReview && !myReview.canEdit) {
+      void message.warning('Bạn đã dùng hết lượt chỉnh sửa đánh giá')
+      return
+    }
+    reviewForm.setFieldsValue({
+      rating: myReview?.rating ?? 5,
+      content: myReview?.content ?? '',
+    })
+    setReviewOpen(true)
+  }
+  const handleBuyNow = async () => {
+    const added = await addToCart({
+      bookId: book.id,
+      quantity,
+      successMessage: false,
+    })
+
+    if (added) {
+      navigate('/checkout', { state: { selectedBookIds: [book.id] } })
+    }
+  }
 
   return (
     <main className="book-detail-page">
@@ -166,6 +292,14 @@ export function BookDetailPage() {
               </Flex>
 
               <div className="book-price-box">
+                {saleIsRunning ? (
+                  <div className="book-flash-countdown">
+                    <span>Giảm giá trong</span>
+                    <b>{saleRemaining.hours}</b>:<b>{saleRemaining.minutes}</b>:
+                    <b>{saleRemaining.seconds}</b>
+                  </div>
+                ) : null}
+                <br />
                 <Space align="baseline">
                   <Typography.Text className="book-sale-price">
                     {formatPrice(book.price)}
@@ -242,7 +376,7 @@ export function BookDetailPage() {
                   type="primary"
                   disabled={stock <= 0}
                   loading={isAddingToCart}
-                  onClick={() => void addToCart({ bookId: book.id, quantity })}
+                  onClick={() => void handleBuyNow()}
                 >
                   Mua ngay
                 </Button>
@@ -288,15 +422,52 @@ export function BookDetailPage() {
               <span>({book.ratingCount ?? 0} đánh giá)</span>
             </div>
             <div className="book-review-bars">
-              {[5, 4, 3, 2, 1].map((star) => (
-                <Flex align="center" gap={10} key={star}>
-                  <span>{star} sao</span>
-                  <Progress percent={star === Math.round(rating) ? 70 : 0} showInfo={false} />
+              {reviewDistribution.map((item) => (
+                <Flex align="center" gap={10} key={item.star}>
+                  <span>{item.star} sao</span>
+                  <Progress percent={item.percent} showInfo={false} />
                 </Flex>
               ))}
             </div>
-            <Button type="primary">Viết đánh giá</Button>
+            <Button type="primary" onClick={openReviewModal}>
+              {myReview ? 'Sửa đánh giá' : 'Viết đánh giá'}
+            </Button>
           </div>
+          <Divider />
+          <List
+            loading={reviewsQuery.isLoading}
+            dataSource={reviews}
+            locale={{ emptyText: 'Chưa có đánh giá nào' }}
+            renderItem={(review) => (
+              <List.Item>
+                <List.Item.Meta
+                  avatar={
+                    <Avatar>
+                      {(review.reviewerName || review.reviewerEmail || 'U').charAt(0).toUpperCase()}
+                    </Avatar>
+                  }
+                  title={
+                    <Space>
+                      <Typography.Text strong>
+                        {review.reviewerName || 'Người dùng SEBook'}
+                      </Typography.Text>
+                      <Rate disabled value={review.rating} style={{ fontSize: 14 }} />
+                    </Space>
+                  }
+                  description={
+                    <Space direction="vertical" size={4}>
+                      <Typography.Text>
+                        {review.content || 'Người dùng chưa nhập nội dung đánh giá.'}
+                      </Typography.Text>
+                      <Typography.Text type="secondary">
+                        {review.updatedAt ? dayjs(review.updatedAt).format('DD/MM/YYYY HH:mm') : ''}
+                      </Typography.Text>
+                    </Space>
+                  }
+                />
+              </List.Item>
+            )}
+          />
         </Card>
 
         {relatedBooks.length > 0 ? (
@@ -321,6 +492,45 @@ export function BookDetailPage() {
 
         <Link to="/books">Quay lại danh sách sách</Link>
       </section>
+      <Modal
+        title={myReview ? 'Sửa đánh giá của bạn' : 'Viết đánh giá'}
+        open={reviewOpen}
+        onCancel={() => setReviewOpen(false)}
+        onOk={() => reviewForm.submit()}
+        confirmLoading={submitReviewMutation.isPending}
+        okText="Lưu đánh giá"
+        cancelText="Huỷ"
+      >
+        <Form
+          form={reviewForm}
+          layout="vertical"
+          initialValues={{ rating: 5 }}
+          onFinish={(values) => submitReviewMutation.mutate(values)}
+        >
+          <Form.Item
+            name="rating"
+            label="Số sao"
+            rules={[{ required: true, message: 'Vui lòng chọn số sao' }]}
+          >
+            <Rate allowClear={false} />
+          </Form.Item>
+          <Form.Item name="content" label="Nội dung đánh giá">
+            <Input.TextArea
+              rows={4}
+              maxLength={1000}
+              showCount
+              placeholder="Chia sẻ cảm nhận của bạn về cuốn sách"
+            />
+          </Form.Item>
+          {myReview ? (
+            <Typography.Text type={myReview.canEdit ? 'secondary' : 'danger'}>
+              {myReview.canEdit
+                ? 'Bạn còn 1 lần chỉnh sửa đánh giá này.'
+                : 'Bạn đã dùng hết lượt chỉnh sửa đánh giá này.'}
+            </Typography.Text>
+          ) : null}
+        </Form>
+      </Modal>
     </main>
   )
 }

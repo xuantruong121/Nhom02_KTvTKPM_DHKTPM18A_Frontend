@@ -1,10 +1,16 @@
-import { App, Button, Card, Descriptions, Input, Space, Table, Tag, Typography } from 'antd'
+import { App, Button, Card, Descriptions, Input, Select, Space, Table, Tag, Typography } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
 import { Link, useLocation, useParams } from 'react-router-dom'
-import { adminApi, type AdminOrder, type OrderItem } from '@/modules/admin/api/adminApi'
+import {
+  adminApi,
+  type AdminOrder,
+  type FulfillmentStatus,
+  type OrderItem,
+} from '@/modules/admin/api/adminApi'
 import { invalidateAdminOrderCaches } from '@/modules/admin/utils/invalidateAdminCaches'
+import { getOrderStatusMeta } from '@/modules/order/utils/orderFormat'
 import { useApiMutation, useApiQuery } from '@/shared/hooks/useApiQuery'
 
 function money(value: number | string | undefined) {
@@ -18,6 +24,7 @@ export default function AdminOrderDetailPage() {
   const params = useParams()
   const orderId = Number(params.id)
   const [cancelReason, setCancelReason] = useState('')
+  const [selectedStatus, setSelectedStatus] = useState<FulfillmentStatus>()
   const ordersBasePath = location.pathname.startsWith('/staff') ? '/staff/orders' : '/admin/orders'
 
   const orderQuery = useApiQuery(['admin', 'orders', orderId], () => adminApi.getOrder(orderId), {
@@ -29,15 +36,11 @@ export default function AdminOrderDetailPage() {
   }
 
   const actionMutation = useApiMutation(
-    (action: 'confirm' | 'process' | 'ship' | 'complete' | 'cancel') => {
-      if (action === 'confirm') return adminApi.updateOrderStatus(orderId, 'CONFIRMED', 'Admin xác nhận đơn hàng')
-      if (action === 'process') return adminApi.processOrder(orderId)
-      if (action === 'ship') return adminApi.shipOrder(orderId)
-      if (action === 'complete') return adminApi.completeOrder(orderId)
-      return adminApi.cancelOrder(orderId, cancelReason || undefined)
-    },
+    (status: FulfillmentStatus) => updateStatus(orderId, status, cancelReason),
     {
       onSuccess: async () => {
+        setSelectedStatus(undefined)
+        setCancelReason('')
         void message.success('Đã cập nhật đơn hàng')
         await refresh()
       },
@@ -45,7 +48,9 @@ export default function AdminOrderDetailPage() {
   )
 
   const order = orderQuery.data
-  const actions = useMemo(() => getActions(order), [order])
+  const statusOptions = useMemo(() => getNextStatusOptions(order), [order])
+  const statusMeta = getOrderStatusMeta(order?.fulfillmentStatus)
+  const canSubmitStatus = Boolean(selectedStatus)
 
   const columns: ColumnsType<OrderItem> = [
     { title: 'Mã sách', dataIndex: 'bookId', width: 100 },
@@ -66,13 +71,13 @@ export default function AdminOrderDetailPage() {
       </Space>
       <Card loading={orderQuery.isLoading}>
         <Descriptions bordered column={2}>
-          <Descriptions.Item label="Khách hàng">{order?.customerName || order?.userId}</Descriptions.Item>
+          <Descriptions.Item label="Khách hàng">
+            {order?.customerName || order?.userId}
+          </Descriptions.Item>
           <Descriptions.Item label="Email">{order?.customerEmail || '-'}</Descriptions.Item>
           <Descriptions.Item label="SĐT">{order?.customerPhone || '-'}</Descriptions.Item>
           <Descriptions.Item label="Trạng thái">
-            <Tag color={order?.fulfillmentStatus === 'CANCELLED' ? 'red' : 'blue'}>
-              {order?.fulfillmentStatus}
-            </Tag>
+            <Tag color={statusMeta.color}>{statusMeta.label}</Tag>
           </Descriptions.Item>
           <Descriptions.Item label="Địa chỉ" span={2}>
             {order?.shippingAddress || '-'}
@@ -82,60 +87,80 @@ export default function AdminOrderDetailPage() {
         </Descriptions>
       </Card>
       <Card title="Thao tác">
-        <Space wrap>
-          {actions.map((action) => (
-            <Button
-              key={action.value}
-              type={action.value === 'cancel' ? 'default' : 'primary'}
-              danger={action.value === 'cancel'}
-              loading={actionMutation.isPending}
-              onClick={() => actionMutation.mutate(action.value)}
-            >
-              {action.label}
-            </Button>
-          ))}
-          {actions.some((action) => action.value === 'cancel') ? (
-            <Input
-              placeholder="Lý do hủy"
-              style={{ width: 280 }}
-              value={cancelReason}
-              onChange={(event) => setCancelReason(event.target.value)}
+        {statusOptions.length > 0 ? (
+          <Space wrap align="start">
+            <Select
+              placeholder="Chọn trạng thái mới"
+              style={{ width: 240 }}
+              value={selectedStatus}
+              onChange={setSelectedStatus}
+              options={statusOptions.map((status) => {
+                const meta = getOrderStatusMeta(status)
+                return { value: status, label: meta.label }
+              })}
             />
-          ) : null}
-        </Space>
+            {selectedStatus === 'CANCELLED' ? (
+              <Input
+                placeholder="Lý do hủy"
+                style={{ width: 280 }}
+                value={cancelReason}
+                onChange={(event) => setCancelReason(event.target.value)}
+              />
+            ) : null}
+            <Button
+              type="primary"
+              danger={selectedStatus === 'CANCELLED'}
+              disabled={!canSubmitStatus}
+              loading={actionMutation.isPending}
+              onClick={() => selectedStatus && actionMutation.mutate(selectedStatus)}
+            >
+              Cập nhật trạng thái
+            </Button>
+          </Space>
+        ) : (
+          <Typography.Text type="secondary">
+            Đơn hàng không còn trạng thái có thể cập nhật.
+          </Typography.Text>
+        )}
       </Card>
       <Card title="Sản phẩm">
-        <Table rowKey="bookId" columns={columns} dataSource={order?.items ?? []} pagination={false} />
+        <Table
+          rowKey="bookId"
+          columns={columns}
+          dataSource={order?.items ?? []}
+          pagination={false}
+        />
       </Card>
     </Space>
   )
 }
 
-function getActions(order?: AdminOrder) {
+function updateStatus(orderId: number, status: FulfillmentStatus, cancelReason: string) {
+  if (status === 'CANCELLED') {
+    return adminApi.cancelOrder(orderId, cancelReason || undefined)
+  }
+  if (status === 'PROCESSING') {
+    return adminApi.processOrder(orderId)
+  }
+  if (status === 'DELIVERING') {
+    return adminApi.shipOrder(orderId)
+  }
+  if (status === 'DELIVERED') {
+    return adminApi.completeOrder(orderId)
+  }
+  return adminApi.updateOrderStatus(orderId, status, getStatusReason(status))
+}
+
+function getNextStatusOptions(order?: AdminOrder): FulfillmentStatus[] {
   if (!order) return []
-  if (order.fulfillmentStatus === 'CONFIRMED') {
-    return [
-      { value: 'process' as const, label: 'Xử lý' },
-      { value: 'cancel' as const, label: 'Hủy' },
-    ]
-  }
-  if (order.fulfillmentStatus === 'PROCESSING') {
-    return [
-      { value: 'ship' as const, label: 'Giao hàng' },
-      { value: 'cancel' as const, label: 'Hủy' },
-    ]
-  }
-  if (order.fulfillmentStatus === 'DELIVERING') {
-    return [
-      { value: 'complete' as const, label: 'Hoàn tất' },
-      { value: 'cancel' as const, label: 'Hủy' },
-    ]
-  }
-  if (order.fulfillmentStatus === 'PENDING') {
-    return [
-      { value: 'confirm' as const, label: 'Xác nhận' },
-      { value: 'cancel' as const, label: 'Hủy' },
-    ]
-  }
+  if (order.fulfillmentStatus === 'PENDING') return ['CONFIRMED']
+  if (order.fulfillmentStatus === 'CONFIRMED') return ['PROCESSING', 'CANCELLED']
+  if (order.fulfillmentStatus === 'PROCESSING') return ['DELIVERING', 'CANCELLED']
+  if (order.fulfillmentStatus === 'DELIVERING') return ['DELIVERED', 'PROCESSING', 'CANCELLED']
   return []
+}
+
+function getStatusReason(status: FulfillmentStatus) {
+  const meta = getOrderStatusMeta(status)
+  return `Admin cập nhật trạng thái sang ${meta.label}`
 }
