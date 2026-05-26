@@ -183,7 +183,6 @@ function ProductCard({ book, compact = false }: { book: Book; compact?: boolean 
         <Typography.Text type="secondary" className="home-product-author">
           {book.author || book.publisher || 'SEBook'}
         </Typography.Text>
-      </Link>
       <Flex align="center" justify="space-between" className="home-product-price-row">
         <div>
           <Typography.Text strong className="home-product-price">
@@ -205,6 +204,7 @@ function ProductCard({ book, compact = false }: { book: Book; compact?: boolean 
           <span>{book.quantity > 0 ? `Còn ${book.quantity}` : 'Hết hàng'}</span>
         </Flex>
       ) : null}
+      </Link>
     </Card>
   )
 }

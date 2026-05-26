@@ -39,6 +39,8 @@ import StaffReturnRequestsPage from '@/modules/staff/pages/StaffReturnRequestsPa
 import StaffStockCheckPage from '@/modules/staff/pages/StaffStockCheckPage'
 import ProfilePage from '@/modules/account/pages/ProfilePage'
 import AddressPage from '@/modules/account/pages/AddressPage'
+import AiAssistantPage from '@/modules/ai/pages/AiAssistantPage'
+import AdminAiPage from '@/modules/admin/pages/AdminAiPage'
 
 export default function AppRoutes() {
   return (
@@ -79,6 +81,7 @@ export default function AppRoutes() {
         <Route index element={<HomePage />} />
         <Route path="/books" element={<BooksPage />} />
         <Route path="/books/:id" element={<BookDetailPage />} />
+        <Route path="/ai" element={<AiAssistantPage />} />
         <Route
           path="/cart"
           element={
@@ -164,6 +167,7 @@ export default function AppRoutes() {
         <Route path="books" element={<AdminBooksPage />} />
         <Route path="categories" element={<CategoryManagementPage area="admin" />} />
         <Route path="inventory" element={<AdminImportStocksPage />} />
+        <Route path="ai" element={<AdminAiPage />} />
       </Route>
 
       {/* ─── Staff (cả SELLER và WAREHOUSE) ───────────────────── */}

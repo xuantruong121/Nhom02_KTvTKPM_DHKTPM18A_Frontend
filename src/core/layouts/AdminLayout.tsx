@@ -5,6 +5,7 @@ import {
   FileSearchOutlined,
   LogoutOutlined,
   ProfileOutlined,
+  RobotOutlined,
   SettingOutlined,
   ShopOutlined,
   StockOutlined,
@@ -26,6 +27,7 @@ const SIDER_COLLAPSED_WIDTH = 80
 
 const MENU_ITEMS: MenuProps['items'] = [
   { key: '/admin', icon: <DashboardOutlined />, label: <Link to="/admin">Dashboard</Link> },
+  { key: '/admin/ai', icon: <RobotOutlined />, label: <Link to="/admin/ai">AI</Link> },
   { key: '/admin/books', icon: <BookOutlined />, label: <Link to="/admin/books">Sách</Link> },
   { key: '/admin/categories', icon: <TagsOutlined />, label: <Link to="/admin/categories">Danh mục</Link> },
   { key: '/admin/system/catalog', icon: <SettingOutlined />, label: <Link to="/admin/system/catalog">Cấu hình catalog</Link> },

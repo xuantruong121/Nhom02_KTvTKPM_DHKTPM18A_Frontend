@@ -23,7 +23,9 @@
 }
 
 .catalog-book-link {
-  display: block;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
   color: inherit;
 }
 

@@ -28,9 +28,10 @@ import {
   Typography,
 } from 'antd'
 import { useMemo, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { accountApi } from '@/modules/account/api/accountApi'
-import { cartApi } from '@/modules/cart/api/cartApi'
+import { cartApi, type Cart } from '@/modules/cart/api/cartApi'
 import { catalogApi } from '@/modules/catalog/api/catalogApi'
 import { orderApi } from '@/modules/order/api/orderApi'
 import {
@@ -86,6 +87,8 @@ const shippingOptions = {
 export function CheckoutPage() {
   const { message } = App.useApp()
   const navigate = useNavigate()
+  const location = useLocation()
+  const queryClient = useQueryClient()
   const [form] = Form.useForm<CheckoutValues>()
   const [couponCode, setCouponCode] = useState('')
   const [promotion, setPromotion] = useState<ValidatePromotionResponse | null>(null)
@@ -96,7 +99,21 @@ export function CheckoutPage() {
   const profileQuery = useApiQuery(['account', 'profile'], () => accountApi.getProfile())
   const booksQuery = useApiQuery(['catalog', 'books', 'checkout'], () => catalogApi.getBooks())
 
-  const items = useMemo(() => cartQuery.data?.items ?? [], [cartQuery.data?.items])
+  const selectedBookIds = useMemo(() => {
+    const state = location.state as { selectedBookIds?: unknown } | null
+    return Array.isArray(state?.selectedBookIds)
+      ? state.selectedBookIds.filter((id): id is number => typeof id === 'number')
+      : []
+  }, [location.state])
+  const selectedBookIdSet = useMemo(() => new Set(selectedBookIds), [selectedBookIds])
+  const cartItems = useMemo(() => cartQuery.data?.items ?? [], [cartQuery.data?.items])
+  const items = useMemo(
+    () =>
+      selectedBookIdSet.size > 0
+        ? cartItems.filter((item) => selectedBookIdSet.has(item.bookId))
+        : cartItems,
+    [cartItems, selectedBookIdSet]
+  )
   const booksById = useMemo(
     () => new Map((booksQuery.data ?? []).map((book) => [book.id, book])),
     [booksQuery.data]
@@ -159,6 +176,7 @@ export function CheckoutPage() {
         customerPhone: values.customerPhone?.trim() || profileQuery.data?.phoneNumber,
         couponCode: promotion?.valid ? couponCode.trim() : undefined,
         paymentMethod: values.paymentMethod,
+        selectedBookIds: selectedBookIds.length > 0 ? selectedBookIds : undefined,
       })
 
       if (values.paymentMethod === 'VNPAY') {
@@ -168,6 +186,22 @@ export function CheckoutPage() {
       }
 
       void message.success('Đặt hàng thành công')
+      queryClient.setQueryData<Cart>(['cart'], (cart) =>
+        cart
+          ? {
+              ...cart,
+              items:
+                selectedBookIdSet.size > 0
+                  ? cart.items.filter((item) => !selectedBookIdSet.has(item.bookId))
+                  : [],
+              totalAmount: 0,
+              totalPrice: 0,
+            }
+          : cart
+      )
+      await queryClient.invalidateQueries({ queryKey: ['cart'] })
+      await queryClient.invalidateQueries({ queryKey: ['orders'] })
+      await queryClient.invalidateQueries({ queryKey: ['catalog', 'books'] })
       navigate(`/orders/${order.orderId}`)
     } catch (err) {
       void message.error(err instanceof Error ? err.message : 'Không thể tạo đơn hàng')

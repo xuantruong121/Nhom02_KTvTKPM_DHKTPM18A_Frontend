@@ -1,0 +1,65 @@
+.ai-page {
+  padding: 22px 24px 34px;
+}
+
+.ai-shell {
+  width: min(1240px, 100%);
+  margin: 0 auto;
+}
+
+.ai-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 18px;
+}
+
+.ai-heading .ant-typography {
+  margin: 0;
+}
+
+.ai-heading .anticon {
+  color: #1677ff;
+  font-size: 24px;
+}
+
+.ai-card {
+  border-radius: 8px;
+}
+
+.ai-workspace {
+  width: 100%;
+}
+
+.ai-result-grid {
+  display: grid;
+  min-height: 180px;
+  margin-top: 18px;
+  place-items: stretch;
+}
+
+.ai-result-grid > .ant-spin {
+  align-self: center;
+  justify-self: center;
+}
+
+.ai-section-alert {
+  margin-top: 14px;
+}
+
+.ai-upload-icon {
+  margin-bottom: 0;
+  color: #1677ff;
+  font-size: 28px;
+}
+
+.ai-recognize-button {
+  margin-top: 14px;
+}
+
+@media (max-width: 760px) {
+  .ai-page {
+    padding: 14px 14px 92px;
+  }
+
+}

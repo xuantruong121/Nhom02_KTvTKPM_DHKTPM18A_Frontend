@@ -15,6 +15,7 @@ export type CheckoutRequest = {
   customerPhone?: string
   couponCode?: string
   paymentMethod?: 'COD' | 'VNPAY'
+  selectedBookIds?: number[]
 }
 
 export type OrderItem = {
