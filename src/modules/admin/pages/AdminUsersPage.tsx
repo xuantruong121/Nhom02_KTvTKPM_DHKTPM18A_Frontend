@@ -1,11 +1,12 @@
-import { App, Button, Card, Input, Popconfirm, Select, Space, Table, Tag, Typography } from 'antd'
+import { App, Button, Card, Form, Input, Modal, Popconfirm, Select, Space, Table, Tag, Typography } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
-import { adminApi, type AdminUser } from '@/modules/admin/api/adminApi'
+import { adminApi, type AdminUser, type CreateStaffPayload, type StaffRole } from '@/modules/admin/api/adminApi'
 import { useApiMutation, useApiQuery } from '@/shared/hooks/useApiQuery'
 
 const ROLE_OPTIONS: AdminUser['role'][] = ['ADMIN', 'STAFF_SELLER', 'STAFF_WAREHOUSE', 'CUSTOMER', 'GUEST']
+const STAFF_ROLE_OPTIONS: StaffRole[] = ['STAFF_SELLER', 'STAFF_WAREHOUSE']
 
 const ROLE_COLOR: Record<AdminUser['role'], string> = {
   ADMIN: 'red',
@@ -18,10 +19,21 @@ const ROLE_COLOR: Record<AdminUser['role'], string> = {
 export default function AdminUsersPage() {
   const { message } = App.useApp()
   const queryClient = useQueryClient()
+  const [createOpen, setCreateOpen] = useState(false)
+  const [form] = Form.useForm<CreateStaffPayload>()
   const [role, setRole] = useState<AdminUser['role'] | undefined>()
   const [enabled, setEnabled] = useState<boolean | undefined>()
   const [keyword, setKeyword] = useState('')
   const usersQuery = useApiQuery(['admin', 'users'], () => adminApi.getUsers())
+
+  const createStaffMutation = useApiMutation((payload: CreateStaffPayload) => adminApi.createStaff(payload), {
+    onSuccess: async () => {
+      void message.success('Đã tạo tài khoản nhân viên')
+      setCreateOpen(false)
+      form.resetFields()
+      await queryClient.invalidateQueries({ queryKey: ['admin', 'users'] })
+    },
+  })
 
   const lockMutation = useApiMutation((id: number) => adminApi.lockUser(id), {
     onSuccess: async () => {
@@ -92,9 +104,14 @@ export default function AdminUsersPage() {
 
   return (
     <Space direction="vertical" size="large" style={{ width: '100%' }}>
-      <Typography.Title level={3} style={{ margin: 0 }}>
-        Người dùng
-      </Typography.Title>
+      <Space style={{ justifyContent: 'space-between', width: '100%' }}>
+        <Typography.Title level={3} style={{ margin: 0 }}>
+          Người dùng
+        </Typography.Title>
+        <Button type="primary" onClick={() => setCreateOpen(true)}>
+          Tạo nhân viên
+        </Button>
+      </Space>
       <Card>
         <Space wrap>
           <Input.Search
@@ -128,6 +145,60 @@ export default function AdminUsersPage() {
       <Card>
         <Table rowKey="id" columns={columns} dataSource={users} loading={usersQuery.isLoading} />
       </Card>
+      <Modal
+        title="Tạo tài khoản nhân viên"
+        open={createOpen}
+        onCancel={() => setCreateOpen(false)}
+        onOk={() => form.submit()}
+        confirmLoading={createStaffMutation.isPending}
+        okText="Tạo"
+        cancelText="Hủy"
+        style={{ top: 24 }}
+      >
+        <Form
+          form={form}
+          layout="vertical"
+          initialValues={{ role: 'STAFF_SELLER' }}
+          onFinish={(values) =>
+            createStaffMutation.mutate({
+              ...values,
+              email: values.email.trim(),
+              fullName: values.fullName.trim(),
+            })
+          }
+        >
+          <Form.Item
+            name="fullName"
+            label="Họ tên"
+            rules={[{ required: true, whitespace: true, message: 'Họ tên không được để trống' }]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item
+            name="email"
+            label="Email"
+            rules={[
+              { required: true, message: 'Email không được để trống' },
+              { type: 'email', message: 'Email không hợp lệ' },
+            ]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item name="role" label="Nhóm quyền" rules={[{ required: true }]}>
+            <Select options={STAFF_ROLE_OPTIONS.map((item) => ({ value: item, label: item }))} />
+          </Form.Item>
+          <Form.Item
+            name="password"
+            label="Mật khẩu tạm"
+            rules={[
+              { required: true, message: 'Mật khẩu không được để trống' },
+              { min: 8, message: 'Mật khẩu tối thiểu 8 ký tự' },
+            ]}
+          >
+            <Input.Password autoComplete="new-password" />
+          </Form.Item>
+        </Form>
+      </Modal>
     </Space>
   )
 }

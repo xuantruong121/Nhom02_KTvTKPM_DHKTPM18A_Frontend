@@ -2,11 +2,14 @@ import {
   DashboardOutlined,
   BookOutlined,
   GiftOutlined,
+  FileSearchOutlined,
   LogoutOutlined,
   ProfileOutlined,
   RobotOutlined,
+  SettingOutlined,
   ShopOutlined,
   StockOutlined,
+  TagsOutlined,
   TeamOutlined,
   UserOutlined,
 } from '@ant-design/icons'
@@ -16,13 +19,18 @@ import { memo, useCallback, useMemo } from 'react'
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuthStore, useAuthUser } from '@/shared/store/authStore'
 import { useUIStore } from '@/shared/store/uiStore'
+import './AdminLayout.css'
 
 const { Sider, Header, Content } = Layout
+const SIDER_WIDTH = 200
+const SIDER_COLLAPSED_WIDTH = 80
 
 const MENU_ITEMS: MenuProps['items'] = [
   { key: '/admin', icon: <DashboardOutlined />, label: <Link to="/admin">Dashboard</Link> },
   { key: '/admin/ai', icon: <RobotOutlined />, label: <Link to="/admin/ai">AI</Link> },
   { key: '/admin/books', icon: <BookOutlined />, label: <Link to="/admin/books">Sách</Link> },
+  { key: '/admin/categories', icon: <TagsOutlined />, label: <Link to="/admin/categories">Danh mục</Link> },
+  { key: '/admin/system/catalog', icon: <SettingOutlined />, label: <Link to="/admin/system/catalog">Cấu hình catalog</Link> },
   { key: '/admin/orders', icon: <ProfileOutlined />, label: <Link to="/admin/orders">Đơn hàng</Link> },
   { key: '/admin/returns', icon: <ProfileOutlined />, label: <Link to="/admin/returns">Trả hàng</Link> },
   {
@@ -31,6 +39,7 @@ const MENU_ITEMS: MenuProps['items'] = [
     label: <Link to="/admin/promotions">Khuyến mãi</Link>,
   },
   { key: '/admin/users', icon: <TeamOutlined />, label: <Link to="/admin/users">Người dùng</Link> },
+  { key: '/admin/audit-logs', icon: <FileSearchOutlined />, label: <Link to="/admin/audit-logs">Nhật ký</Link> },
   { key: '/admin/suppliers', icon: <ShopOutlined />, label: <Link to="/admin/suppliers">Nhà cung cấp</Link> },
   { key: '/admin/purchase-orders', icon: <ShopOutlined />, label: <Link to="/admin/purchase-orders">PO mua hàng</Link> },
   { key: '/admin/stock-check', icon: <StockOutlined />, label: <Link to="/admin/stock-check">Kiểm kho</Link> },
@@ -57,16 +66,35 @@ function AdminLayoutImpl() {
     })
     return [match && 'key' in match ? String(match.key) : '/admin']
   }, [location.pathname])
+  const siderWidth = collapsed ? SIDER_COLLAPSED_WIDTH : SIDER_WIDTH
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      <Sider theme="dark" breakpoint="lg" collapsible collapsed={collapsed} onCollapse={setCollapsed}>
+      <Sider
+        theme="dark"
+        breakpoint="lg"
+        collapsible
+        collapsed={collapsed}
+        onCollapse={setCollapsed}
+        className="admin-layout-sider"
+        style={{
+          position: 'fixed',
+          insetInlineStart: 0,
+          top: 0,
+          bottom: 0,
+          height: '100vh',
+          overflow: 'hidden',
+          zIndex: 100,
+        }}
+      >
         <div style={{ color: '#fff', fontWeight: 700, padding: '16px 24px', fontSize: 18 }}>
           {collapsed ? 'SB' : 'SEBook Admin'}
         </div>
-        <Menu theme="dark" mode="inline" selectedKeys={selectedKeys} items={MENU_ITEMS} />
+        <div className="admin-layout-menu-scroll">
+          <Menu theme="dark" mode="inline" selectedKeys={selectedKeys} items={MENU_ITEMS} />
+        </div>
       </Sider>
-      <Layout>
+      <Layout style={{ marginLeft: siderWidth, transition: 'margin-left 0.2s' }}>
         <Header
           style={{
             background: '#fff',

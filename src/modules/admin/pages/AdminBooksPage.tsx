@@ -7,11 +7,15 @@ import { invalidateCatalogStockCaches } from '@/modules/admin/utils/invalidateAd
 import StaffBookModal from '@/modules/staff/components/StaffBookModal'
 import { useApiMutation, useApiQuery } from '@/shared/hooks/useApiQuery'
 
+type AdminBooksPageProps = {
+  canDelete?: boolean
+}
+
 function money(value: number | string | undefined) {
   return Number(value ?? 0).toLocaleString('vi-VN')
 }
 
-export default function AdminBooksPage() {
+export default function AdminBooksPage({ canDelete = true }: AdminBooksPageProps) {
   const { message } = App.useApp()
   const queryClient = useQueryClient()
   const [editingBook, setEditingBook] = useState<AdminBook | null>(null)
@@ -78,18 +82,20 @@ export default function AdminBooksPage() {
           >
             Sửa
           </Button>
-          <Popconfirm
-            title="Xóa sách?"
-            description={`Bạn có chắc muốn xóa "${book.title}"?`}
-            okText="Xóa"
-            cancelText="Hủy"
-            okButtonProps={{ danger: true, loading: deleteMutation.isPending }}
-            onConfirm={() => deleteMutation.mutate(book.id)}
-          >
-            <Button danger type="link">
-              Xóa
-            </Button>
-          </Popconfirm>
+          {canDelete ? (
+            <Popconfirm
+              title="Xóa sách?"
+              description={`Bạn có chắc muốn xóa "${book.title}"?`}
+              okText="Xóa"
+              cancelText="Hủy"
+              okButtonProps={{ danger: true, loading: deleteMutation.isPending }}
+              onConfirm={() => deleteMutation.mutate(book.id)}
+            >
+              <Button danger type="link">
+                Xóa
+              </Button>
+            </Popconfirm>
+          ) : null}
         </Space>
       ),
       width: 140,

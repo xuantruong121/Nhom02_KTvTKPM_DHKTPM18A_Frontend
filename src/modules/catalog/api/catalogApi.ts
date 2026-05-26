@@ -7,6 +7,10 @@ export type Category = {
   isActive?: boolean
 }
 
+export type CategoryPayload = {
+  name: string
+}
+
 export type Book = {
   id: number
   title: string
@@ -37,6 +41,15 @@ export type BookSearchParams = {
 export const catalogApi = {
   getCategories() {
     return unwrapApi<Category[]>(http.get('/catalog/categories'))
+  },
+  createCategory(payload: CategoryPayload) {
+    return unwrapApi<Category>(http.post('/catalog/categories', payload))
+  },
+  updateCategory(id: number, payload: CategoryPayload) {
+    return unwrapApi<Category>(http.patch(`/catalog/categories/${id}`, payload))
+  },
+  deleteCategory(id: number) {
+    return unwrapApi<void>(http.delete(`/catalog/categories/${id}`))
   },
   getBooks(params?: BookSearchParams) {
     return unwrapApi<Book[]>(http.get('/catalog/books', { params }))
