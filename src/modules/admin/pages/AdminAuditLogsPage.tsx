@@ -1,6 +1,8 @@
-import { Card, Space, Table, Tag, Typography } from 'antd'
+import { Card, Input, Space, Table, Tag, Typography } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
+import { useMemo, useState } from 'react'
 import { adminApi, type AuditLog } from '@/modules/admin/api/adminApi'
+import { matchesKeyword } from '@/modules/admin/utils/search'
 import { useApiQuery } from '@/shared/hooks/useApiQuery'
 
 function formatDate(value?: string) {
@@ -9,18 +11,42 @@ function formatDate(value?: string) {
 }
 
 export default function AdminAuditLogsPage() {
+  const [keyword, setKeyword] = useState('')
   const logsQuery = useApiQuery(['admin', 'auditLogs'], () => adminApi.getAuditLogs(), {
     refetchInterval: 10_000,
   })
 
+  const logs = useMemo(
+    () =>
+      (logsQuery.data ?? []).filter((log) =>
+        matchesKeyword(
+          keyword,
+          log.userId,
+          log.role,
+          log.action,
+          log.target,
+          log.oldValue,
+          log.newValue
+        )
+      ),
+    [keyword, logsQuery.data]
+  )
+
   const columns: ColumnsType<AuditLog> = [
     { title: 'Thời gian', dataIndex: 'createdAt', width: 180, render: formatDate },
-    { title: 'Người thao tác', dataIndex: 'userId', width: 220, render: (value?: string) => value || 'SYSTEM' },
+    {
+      title: 'Người thao tác',
+      dataIndex: 'userId',
+      width: 220,
+      render: (value?: string) => value || 'SYSTEM',
+    },
     {
       title: 'Nhóm',
       dataIndex: 'role',
       width: 160,
-      render: (value?: AuditLog['role']) => <Tag color={value === 'STAFF_WAREHOUSE' ? 'geekblue' : 'blue'}>{value}</Tag>,
+      render: (value?: AuditLog['role']) => (
+        <Tag color={value === 'STAFF_WAREHOUSE' ? 'geekblue' : 'blue'}>{value}</Tag>
+      ),
     },
     {
       title: 'Hành động',
@@ -38,13 +64,22 @@ export default function AdminAuditLogsPage() {
         Nhật ký thao tác nhân viên
       </Typography.Title>
       <Card>
-        <Table
-          rowKey="id"
-          columns={columns}
-          dataSource={logsQuery.data ?? []}
-          loading={logsQuery.isLoading}
-          pagination={{ pageSize: 20 }}
-        />
+        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+          <Input.Search
+            allowClear
+            placeholder="Tim theo nguoi thao tac, nhom, hanh dong, doi tuong"
+            style={{ maxWidth: 420 }}
+            value={keyword}
+            onChange={(event) => setKeyword(event.target.value)}
+          />
+          <Table
+            rowKey="id"
+            columns={columns}
+            dataSource={logs}
+            loading={logsQuery.isLoading}
+            pagination={{ pageSize: 20 }}
+          />
+        </Space>
       </Card>
     </Space>
   )

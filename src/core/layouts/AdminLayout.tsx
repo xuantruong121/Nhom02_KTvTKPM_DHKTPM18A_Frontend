@@ -2,6 +2,7 @@ import {
   DashboardOutlined,
   BookOutlined,
   GiftOutlined,
+  FireOutlined,
   FileSearchOutlined,
   LogoutOutlined,
   ProfileOutlined,
@@ -12,6 +13,7 @@ import {
   TeamOutlined,
   UserOutlined,
   SettingOutlined,
+  StarOutlined,
 } from '@ant-design/icons'
 import { Avatar, Layout, Menu, Space, Typography } from 'antd'
 import type { MenuProps } from 'antd'
@@ -29,6 +31,16 @@ const MENU_ITEMS: MenuProps['items'] = [
   { key: '/admin', icon: <DashboardOutlined />, label: <Link to="/admin">Dashboard</Link> },
   { key: '/admin/ai', icon: <RobotOutlined />, label: <Link to="/admin/ai">AI</Link> },
   { key: '/admin/books', icon: <BookOutlined />, label: <Link to="/admin/books">Sách</Link> },
+  {
+    key: '/admin/flash-sales',
+    icon: <FireOutlined />,
+    label: <Link to="/admin/flash-sales">Flash Sale</Link>,
+  },
+  {
+    key: '/admin/reviews',
+    icon: <StarOutlined />,
+    label: <Link to="/admin/reviews">Đánh giá</Link>,
+  },
   {
     key: '/admin/categories',
     icon: <TagsOutlined />,

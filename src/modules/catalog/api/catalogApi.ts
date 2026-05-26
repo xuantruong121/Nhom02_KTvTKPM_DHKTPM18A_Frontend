@@ -13,6 +13,8 @@ export type CategoryPayload = {
 
 export type Book = {
   id: number
+  createdAt?: string
+  updatedAt?: string
   title: string
   author: string
   description?: string | null
@@ -38,6 +40,26 @@ export type BookSearchParams = {
   categoryId?: number
 }
 
+export type BookReview = {
+  id: number
+  bookId: number
+  bookTitle: string
+  userId: number
+  reviewerName?: string
+  reviewerEmail?: string
+  rating: number
+  content?: string | null
+  editCount: number
+  canEdit: boolean
+  createdAt?: string
+  updatedAt?: string
+}
+
+export type BookReviewPayload = {
+  rating: number
+  content?: string
+}
+
 export const catalogApi = {
   getCategories() {
     return unwrapApi<Category[]>(http.get('/catalog/categories'))
@@ -56,5 +78,14 @@ export const catalogApi = {
   },
   getBook(id: number) {
     return unwrapApi<Book>(http.get(`/catalog/books/${id}`))
+  },
+  getBookReviews(bookId: number) {
+    return unwrapApi<BookReview[]>(http.get(`/catalog/books/${bookId}/reviews`))
+  },
+  getMyBookReview(bookId: number) {
+    return unwrapApi<BookReview | null>(http.get(`/catalog/books/${bookId}/reviews/me`))
+  },
+  submitBookReview(bookId: number, payload: BookReviewPayload) {
+    return unwrapApi<BookReview>(http.post(`/catalog/books/${bookId}/reviews`, payload))
   },
 }

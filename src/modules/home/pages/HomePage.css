@@ -7,6 +7,10 @@
   margin: 0 auto 18px;
 }
 
+.home-shell[id] {
+  scroll-margin-top: 128px;
+}
+
 .home-hero-grid {
   display: grid;
   grid-template-columns: 280px minmax(0, 1fr);
@@ -61,6 +65,7 @@
 }
 
 .home-hero-card .ant-card-body {
+  position: relative;
   padding: 0;
 }
 
@@ -116,6 +121,30 @@
 
 .home-hero-covers img:nth-child(3) {
   transform: rotate(7deg);
+}
+
+.home-hero-controls {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  pointer-events: none;
+}
+
+.home-hero-controls .ant-btn {
+  pointer-events: auto;
+  color: #c92127;
+  border-color: #fecdd3;
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 8px 18px rgba(127, 29, 29, 0.14);
+}
+
+.home-hero-controls .ant-btn:hover {
+  color: #fff;
+  border-color: #c92127;
+  background: #c92127;
 }
 
 .home-shortcuts {
@@ -262,6 +291,14 @@
   color: #f59e0b;
 }
 
+.home-product-action {
+  margin-top: 12px;
+}
+
+.home-product-action .ant-btn {
+  height: 36px;
+}
+
 .home-sale-progress {
   margin-top: 10px;
 }
@@ -292,6 +329,12 @@
   color: #334155;
   font-weight: 700;
   text-align: center;
+}
+
+.home-text-tile:hover {
+  color: #c92127;
+  text-decoration: none;
+  border-color: #c92127;
 }
 
 .home-text-tile .anticon {
@@ -381,6 +424,12 @@
   color: #c92127;
 }
 
+.home-rank-info .home-rank-sold {
+  margin-top: 4px;
+  color: #0f766e;
+  font-weight: 600;
+}
+
 .home-brand-grid {
   display: grid;
   grid-template-columns: repeat(6, minmax(120px, 1fr));
@@ -431,6 +480,34 @@
 .home-combo span {
   color: #64748b;
   font-size: 13px;
+}
+
+.home-category-modal-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.home-category-modal-grid a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 46px;
+  padding: 10px 12px;
+  border: 1px solid #ececec;
+  border-radius: 8px;
+  color: #334155;
+  font-weight: 700;
+}
+
+.home-category-modal-grid a:hover {
+  border-color: #c92127;
+  color: #c92127;
+  text-decoration: none;
+}
+
+.home-category-modal-grid .anticon {
+  color: #c92127;
 }
 
 @media (max-width: 1080px) {

@@ -36,7 +36,10 @@ export function useAddToCart() {
       { bookId, quantity },
       {
         onSuccess: async () => {
-          await queryClient.invalidateQueries({ queryKey: ['cart'] })
+          await Promise.all([
+            queryClient.invalidateQueries({ queryKey: ['cart'] }),
+            queryClient.invalidateQueries({ queryKey: ['home', 'flash-sale', 'active'] }),
+          ])
           if (successMessage !== false) {
             void message.success(successMessage ?? 'Đã thêm sách vào giỏ hàng')
           }

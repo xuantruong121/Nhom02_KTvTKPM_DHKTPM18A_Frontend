@@ -9,6 +9,7 @@ import {
   type ReturnStatus,
 } from '@/modules/admin/api/adminApi'
 import { invalidateAdminReturnCaches } from '@/modules/admin/utils/invalidateAdminCaches'
+import { matchesKeyword } from '@/modules/admin/utils/search'
 import { useApiMutation, useApiQuery } from '@/shared/hooks/useApiQuery'
 
 type ReturnAction = 'approve' | 'receive' | 'refund' | 'reject'
@@ -19,18 +20,34 @@ export default function StaffReturnRequestsPage() {
   const { message } = App.useApp()
   const queryClient = useQueryClient()
   const returnsQuery = useApiQuery(['staff', 'returns'], () => adminApi.getReturns())
-  const [active, setActive] = useState<{ request: ReturnRequest; action: ReturnAction } | null>(null)
+  const [active, setActive] = useState<{ request: ReturnRequest; action: ReturnAction } | null>(
+    null
+  )
+  const [keyword, setKeyword] = useState('')
   const [reason, setReason] = useState('')
   const [conditions, setConditions] = useState<ItemCondition[]>(['GOOD'])
 
   const sortedReturns = useMemo(() => {
-    return [...(returnsQuery.data ?? [])].sort((left, right) => {
-      const rightTime = right.createdAt ? new Date(right.createdAt).getTime() : 0
-      const leftTime = left.createdAt ? new Date(left.createdAt).getTime() : 0
-      if (rightTime !== leftTime) return rightTime - leftTime
-      return String(right.id).localeCompare(String(left.id), 'vi', { numeric: true })
-    })
-  }, [returnsQuery.data])
+    return [...(returnsQuery.data ?? [])]
+      .filter((request) =>
+        matchesKeyword(
+          keyword,
+          request.id,
+          request.orderId,
+          request.customerId,
+          request.status,
+          request.reason,
+          request.notes,
+          request.items?.map((item) => `${item.bookId} ${item.quantity}`).join(' ')
+        )
+      )
+      .sort((left, right) => {
+        const rightTime = right.createdAt ? new Date(right.createdAt).getTime() : 0
+        const leftTime = left.createdAt ? new Date(left.createdAt).getTime() : 0
+        if (rightTime !== leftTime) return rightTime - leftTime
+        return String(right.id).localeCompare(String(left.id), 'vi', { numeric: true })
+      })
+  }, [keyword, returnsQuery.data])
 
   const openAction = (request: ReturnRequest, action: ReturnAction) => {
     setActive({ request, action })
@@ -65,23 +82,42 @@ export default function StaffReturnRequestsPage() {
     {
       title: 'Trạng thái',
       dataIndex: 'status',
-      render: (value: ReturnStatus) => <Tag color={value === 'REJECTED' ? 'red' : 'blue'}>{value}</Tag>,
+      render: (value: ReturnStatus) => (
+        <Tag color={value === 'REJECTED' ? 'red' : 'blue'}>{value}</Tag>
+      ),
       width: 140,
     },
     {
       title: 'Thao tác',
       render: (_, request) => (
         <Space wrap>
-          <Button size="small" disabled={request.status !== 'PENDING'} onClick={() => openAction(request, 'approve')}>
+          <Button
+            size="small"
+            disabled={request.status !== 'PENDING'}
+            onClick={() => openAction(request, 'approve')}
+          >
             Duyệt
           </Button>
-          <Button size="small" disabled={request.status !== 'APPROVED'} onClick={() => openAction(request, 'receive')}>
+          <Button
+            size="small"
+            disabled={request.status !== 'APPROVED'}
+            onClick={() => openAction(request, 'receive')}
+          >
             Đã nhận
           </Button>
-          <Button size="small" disabled={request.status !== 'RECEIVED'} onClick={() => openAction(request, 'refund')}>
+          <Button
+            size="small"
+            disabled={request.status !== 'RECEIVED'}
+            onClick={() => openAction(request, 'refund')}
+          >
             Hoàn tiền
           </Button>
-          <Button size="small" danger disabled={request.status === 'REFUNDED'} onClick={() => openAction(request, 'reject')}>
+          <Button
+            size="small"
+            danger
+            disabled={request.status === 'REFUNDED'}
+            onClick={() => openAction(request, 'reject')}
+          >
             Từ chối
           </Button>
         </Space>
@@ -96,7 +132,21 @@ export default function StaffReturnRequestsPage() {
         Yêu cầu trả hàng
       </Typography.Title>
       <Card>
-        <Table rowKey="id" columns={columns} dataSource={sortedReturns} loading={returnsQuery.isLoading} />
+        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+          <Input.Search
+            allowClear
+            placeholder="Tim theo ma tra hang, don hang, khach, ly do"
+            style={{ maxWidth: 420 }}
+            value={keyword}
+            onChange={(event) => setKeyword(event.target.value)}
+          />
+          <Table
+            rowKey="id"
+            columns={columns}
+            dataSource={sortedReturns}
+            loading={returnsQuery.isLoading}
+          />
+        </Space>
       </Card>
       <Modal
         title="Xác nhận thao tác"
@@ -107,7 +157,12 @@ export default function StaffReturnRequestsPage() {
         style={{ top: 24 }}
       >
         {active?.action === 'reject' ? (
-          <Input.TextArea rows={3} placeholder="Lý do từ chối" value={reason} onChange={(event) => setReason(event.target.value)} />
+          <Input.TextArea
+            rows={3}
+            placeholder="Lý do từ chối"
+            value={reason}
+            onChange={(event) => setReason(event.target.value)}
+          />
         ) : null}
         {active?.action === 'receive' ? (
           <Space direction="vertical" style={{ width: '100%' }}>

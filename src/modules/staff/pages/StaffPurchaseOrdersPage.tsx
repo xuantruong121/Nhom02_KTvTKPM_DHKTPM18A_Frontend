@@ -1,7 +1,20 @@
-import { App, Button, Card, Form, Input, InputNumber, Modal, Select, Space, Table, Tag, Typography } from 'antd'
+import {
+  App,
+  Button,
+  Card,
+  Form,
+  Input,
+  InputNumber,
+  Modal,
+  Select,
+  Space,
+  Table,
+  Tag,
+  Typography,
+} from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   adminApi,
@@ -10,6 +23,7 @@ import {
   type PurchaseOrderStatus,
 } from '@/modules/admin/api/adminApi'
 import { invalidatePurchaseOrderCaches } from '@/modules/admin/utils/invalidateAdminCaches'
+import { matchesKeyword } from '@/modules/admin/utils/search'
 import { useApiMutation, useApiQuery } from '@/shared/hooks/useApiQuery'
 
 type POAction = 'submit' | 'approve' | 'return' | 'receive' | 'cancel'
@@ -19,25 +33,52 @@ export default function StaffPurchaseOrdersPage() {
   const queryClient = useQueryClient()
   const [openCreate, setOpenCreate] = useState(false)
   const [active, setActive] = useState<{ po: PurchaseOrder; action: POAction } | null>(null)
+  const [keyword, setKeyword] = useState('')
   const [reason, setReason] = useState('')
   const [form] = Form.useForm<PurchaseOrderPayload>()
 
   const poQuery = useApiQuery(['staff', 'purchaseOrders'], () => adminApi.getPurchaseOrders())
   const suppliersQuery = useApiQuery(['admin', 'suppliers'], () => adminApi.getSuppliers())
   const booksQuery = useApiQuery(['admin', 'books'], () => adminApi.getBooks())
-  const bookOptions = (booksQuery.data ?? []).map((book) => ({
-    value: book.id,
-    label: `${book.title} - ${book.author}`,
-  }))
+  const bookOptions = useMemo(
+    () =>
+      (booksQuery.data ?? []).map((book) => ({
+        value: book.id,
+        label: `${book.title} - ${book.author}`,
+      })),
+    [booksQuery.data]
+  )
 
-  const createMutation = useApiMutation((payload: PurchaseOrderPayload) => adminApi.createPurchaseOrder(payload), {
-    onSuccess: async () => {
-      void message.success('Đã tạo PO')
-      setOpenCreate(false)
-      form.resetFields()
-      await invalidatePurchaseOrderCaches(queryClient)
-    },
-  })
+  const purchaseOrders = useMemo(
+    () =>
+      (poQuery.data ?? []).filter((po) =>
+        matchesKeyword(
+          keyword,
+          po.id,
+          po.supplier?.name,
+          po.status,
+          po.totalAmount,
+          po.note,
+          po.createdBy,
+          po.approvedBy,
+          po.receivedBy,
+          po.items.map((item) => getBookLabel(item.bookId, bookOptions)).join(' ')
+        )
+      ),
+    [bookOptions, keyword, poQuery.data]
+  )
+
+  const createMutation = useApiMutation(
+    (payload: PurchaseOrderPayload) => adminApi.createPurchaseOrder(payload),
+    {
+      onSuccess: async () => {
+        void message.success('Đã tạo PO')
+        setOpenCreate(false)
+        form.resetFields()
+        await invalidatePurchaseOrderCaches(queryClient)
+      },
+    }
+  )
 
   const actionMutation = useApiMutation(
     async () => {
@@ -69,10 +110,16 @@ export default function StaffPurchaseOrdersPage() {
     {
       title: 'Trạng thái',
       dataIndex: 'status',
-      render: (value: PurchaseOrderStatus) => <Tag color={value === 'CANCELLED' ? 'red' : 'blue'}>{value}</Tag>,
+      render: (value: PurchaseOrderStatus) => (
+        <Tag color={value === 'CANCELLED' ? 'red' : 'blue'}>{value}</Tag>
+      ),
       width: 140,
     },
-    { title: 'Tổng tiền', dataIndex: 'totalAmount', render: (value: string | number) => Number(value).toLocaleString('vi-VN') },
+    {
+      title: 'Tổng tiền',
+      dataIndex: 'totalAmount',
+      render: (value: string | number) => Number(value).toLocaleString('vi-VN'),
+    },
     {
       title: 'Sách',
       render: (_, po) => po.items.map((item) => getBookLabel(item.bookId, bookOptions)).join(', '),
@@ -108,7 +155,21 @@ export default function StaffPurchaseOrdersPage() {
         </Button>
       </Space>
       <Card>
-        <Table rowKey="id" columns={columns} dataSource={poQuery.data ?? []} loading={poQuery.isLoading} />
+        <Space direction="vertical" size="middle" style={{ width: '100%' }}>
+          <Input.Search
+            allowClear
+            placeholder="Tim theo ma PO, nha cung cap, trang thai, sach"
+            style={{ maxWidth: 420 }}
+            value={keyword}
+            onChange={(event) => setKeyword(event.target.value)}
+          />
+          <Table
+            rowKey="id"
+            columns={columns}
+            dataSource={purchaseOrders}
+            loading={poQuery.isLoading}
+          />
+        </Space>
       </Card>
       <Modal
         title="Tạo PO"
@@ -175,7 +236,12 @@ export default function StaffPurchaseOrdersPage() {
         style={{ top: 24 }}
       >
         {active?.action === 'return' || active?.action === 'cancel' ? (
-          <Input.TextArea rows={3} placeholder="Lý do" value={reason} onChange={(event) => setReason(event.target.value)} />
+          <Input.TextArea
+            rows={3}
+            placeholder="Lý do"
+            value={reason}
+            onChange={(event) => setReason(event.target.value)}
+          />
         ) : (
           <Typography.Text>Xác nhận thao tác {active?.action}</Typography.Text>
         )}

@@ -6,12 +6,14 @@ import ProtectedRoute from '@/core/router/ProtectedRoute'
 import RoleRoute from '@/core/router/RoleRoute'
 import AdminHomePage from '@/modules/admin/pages/AdminHomePage'
 import AdminBooksPage from '@/modules/admin/pages/AdminBooksPage'
+import AdminFlashSalesPage from '@/modules/admin/pages/AdminFlashSalesPage'
 import AdminAuditLogsPage from '@/modules/admin/pages/AdminAuditLogsPage'
 import AdminImportStocksPage from '@/modules/admin/pages/AdminImportStocksPage'
 import AdminOrderDetailPage from '@/modules/admin/pages/AdminOrderDetailPage'
 import AdminOrdersPage from '@/modules/admin/pages/AdminOrdersPage'
 import AdminPromotionDetailPage from '@/modules/admin/pages/AdminPromotionDetailPage'
 import AdminPromotionsPage from '@/modules/admin/pages/AdminPromotionsPage'
+import AdminReviewsPage from '@/modules/admin/pages/AdminReviewsPage'
 import AdminSuppliersPage from '@/modules/admin/pages/AdminSuppliersPage'
 import AdminSystemCatalogPage from '@/modules/admin/pages/AdminSystemCatalogPage'
 import AdminUsersPage from '@/modules/admin/pages/AdminUsersPage'
@@ -41,6 +43,7 @@ import ProfilePage from '@/modules/account/pages/ProfilePage'
 import AddressPage from '@/modules/account/pages/AddressPage'
 import AiAssistantPage from '@/modules/ai/pages/AiAssistantPage'
 import AdminAiPage from '@/modules/admin/pages/AdminAiPage'
+import { HomeCollectionPage } from '@/modules/home/pages/HomeCollectionPage'
 
 export default function AppRoutes() {
   return (
@@ -81,6 +84,10 @@ export default function AppRoutes() {
         <Route index element={<HomePage />} />
         <Route path="/books" element={<BooksPage />} />
         <Route path="/books/:id" element={<BookDetailPage />} />
+        <Route path="/collections/new-books" element={<HomeCollectionPage type="new-books" />} />
+        <Route path="/collections/trends" element={<HomeCollectionPage type="trends" />} />
+        <Route path="/collections/rankings" element={<HomeCollectionPage type="rankings" />} />
+        <Route path="/collections/flash-sale" element={<HomeCollectionPage type="flash-sale" />} />
         <Route path="/ai" element={<AiAssistantPage />} />
         <Route
           path="/cart"
@@ -98,10 +105,7 @@ export default function AppRoutes() {
             </ProtectedRoute>
           }
         />
-        <Route
-          path="/payment/result"
-          element={<PaymentResultPage />}
-        />
+        <Route path="/payment/result" element={<PaymentResultPage />} />
         <Route
           path="/orders"
           element={
@@ -165,6 +169,8 @@ export default function AppRoutes() {
         <Route path="purchase-orders/:id" element={<StaffPurchaseOrderDetailPage />} />
         <Route path="stock-check" element={<StaffStockCheckPage />} />
         <Route path="books" element={<AdminBooksPage />} />
+        <Route path="flash-sales" element={<AdminFlashSalesPage />} />
+        <Route path="reviews" element={<AdminReviewsPage />} />
         <Route path="categories" element={<CategoryManagementPage area="admin" />} />
         <Route path="inventory" element={<AdminImportStocksPage />} />
         <Route path="ai" element={<AdminAiPage />} />

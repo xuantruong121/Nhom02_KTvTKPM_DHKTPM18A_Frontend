@@ -22,8 +22,10 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
+import dayjs from 'dayjs'
 import { cartApi, type Cart, type CartItem } from '@/modules/cart/api/cartApi'
 import { catalogApi } from '@/modules/catalog/api/catalogApi'
+import { homeApi } from '@/modules/home/api/homeApi'
 import { useApiMutation, useApiQuery } from '@/shared/hooks/useApiQuery'
 import './CartPage.css'
 
@@ -53,6 +55,9 @@ export function CartPage() {
 
   const cartQuery = useApiQuery(['cart'], () => cartApi.getCart())
   const booksQuery = useApiQuery(['catalog', 'books', 'cart'], () => catalogApi.getBooks())
+  const activeFlashSaleQuery = useApiQuery(['home', 'flash-sale', 'active'], () => homeApi.getActiveFlashSale(), {
+    refetchInterval: 30_000,
+  })
 
   const removeMutation = useApiMutation<string, unknown, number>(
     (bookId) => cartApi.removeItem(bookId),
@@ -104,10 +109,43 @@ export function CartPage() {
     },
   })
 
-  const items = useMemo(() => cartQuery.data?.items ?? [], [cartQuery.data?.items])
+  const cartItems = useMemo(() => cartQuery.data?.items ?? [], [cartQuery.data?.items])
+  const itemOrderRef = useRef<number[]>([])
+
+  const items = useMemo(() => {
+    const currentBookIds = new Set(cartItems.map((item) => item.bookId))
+    const existingOrder = itemOrderRef.current.filter((bookId) => currentBookIds.has(bookId))
+    const knownBookIds = new Set(existingOrder)
+    const newBookIds = cartItems
+      .map((item) => item.bookId)
+      .filter((bookId) => !knownBookIds.has(bookId))
+
+    itemOrderRef.current = [...existingOrder, ...newBookIds]
+
+    const itemsByBookId = new Map(cartItems.map((item) => [item.bookId, item]))
+    return itemOrderRef.current
+      .map((bookId) => itemsByBookId.get(bookId))
+      .filter((item): item is CartItem => Boolean(item))
+  }, [cartItems])
   const booksById = useMemo(
     () => new Map((booksQuery.data ?? []).map((book) => [book.id, book])),
     [booksQuery.data]
+  )
+  const activeFlashSaleByBookId = useMemo(() => {
+    const now = dayjs()
+    return new Map(
+      (activeFlashSaleQuery.data?.items ?? [])
+        .filter((item) => (
+          item.saleQuantity > 0
+          && now.isAfter(dayjs(item.startAt))
+          && now.isBefore(dayjs(item.endAt))
+        ))
+        .map((item) => [item.bookId, item])
+    )
+  }, [activeFlashSaleQuery.data?.items])
+  const getItemStock = useCallback(
+    (item: CartItem) => activeFlashSaleByBookId.get(item.bookId)?.saleQuantity ?? booksById.get(item.bookId)?.quantity ?? item.quantity,
+    [activeFlashSaleByBookId, booksById]
   )
 
   /* ── Bulk selection state ──────────────────────────────── */
@@ -185,7 +223,7 @@ export function CartPage() {
 
   /* ── Quantity handler with debounce ──────────────────── */
   const updateQuantity = (item: CartItem, quantity: number) => {
-    const stock = Math.max(1, booksById.get(item.bookId)?.quantity ?? item.quantity)
+    const stock = Math.max(1, getItemStock(item))
     const clamped = Math.max(1, Math.min(quantity, stock))
 
     // Update local display immediately
@@ -260,7 +298,7 @@ export function CartPage() {
     [localQuantities, selectedItems]
   )
 
-  const loading = cartQuery.isLoading || booksQuery.isLoading
+  const loading = cartQuery.isLoading || booksQuery.isLoading || activeFlashSaleQuery.isLoading
 
   return (
     <main className="cart-page">
@@ -346,7 +384,7 @@ export function CartPage() {
               <div className="cart-items">
                 {items.map((item) => {
                   const book = booksById.get(item.bookId)
-                  const stock = book?.quantity ?? 0
+                  const stock = getItemStock(item)
                   const currentQty = getDisplayQty(item)
                   const isUpdating = updateQuantityMutation.isPending
 

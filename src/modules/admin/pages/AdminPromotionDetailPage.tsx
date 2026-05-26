@@ -5,6 +5,9 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { adminApi, type CouponPayload, type DiscountType } from '@/modules/admin/api/adminApi'
 import { useApiMutation, useApiQuery } from '@/shared/hooks/useApiQuery'
 
+const API_DATE_TIME_FORMAT = 'YYYY-MM-DDTHH:mm:ss'
+const DISPLAY_DATE_TIME_FORMAT = 'DD/MM/YYYY HH:mm'
+
 type CouponForm = Omit<CouponPayload, 'startDate' | 'endDate'> & {
   dateRange?: [dayjs.Dayjs, dayjs.Dayjs]
 }
@@ -98,7 +101,11 @@ export default function AdminPromotionDetailPage() {
             <InputNumber min={1} style={{ width: '100%' }} />
           </Form.Item>
           <Form.Item name="dateRange" label="Thời gian áp dụng">
-            <DatePicker.RangePicker showTime style={{ width: '100%' }} />
+            <DatePicker.RangePicker
+              format={DISPLAY_DATE_TIME_FORMAT}
+              showTime={{ format: 'HH:mm' }}
+              style={{ width: '100%' }}
+            />
           </Form.Item>
           <Form.Item name="isActive" label="Đang bật" valuePropName="checked">
             <Switch />
@@ -116,7 +123,7 @@ function toPayload(values: CouponForm): CouponPayload {
   const { dateRange, ...rest } = values
   return {
     ...rest,
-    startDate: dateRange?.[0]?.toISOString(),
-    endDate: dateRange?.[1]?.toISOString(),
+    startDate: dateRange?.[0]?.format(API_DATE_TIME_FORMAT),
+    endDate: dateRange?.[1]?.format(API_DATE_TIME_FORMAT),
   }
 }

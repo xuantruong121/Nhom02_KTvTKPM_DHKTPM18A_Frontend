@@ -105,6 +105,22 @@
   background: #fff1f2;
 }
 
+.book-flash-countdown {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 10px;
+  color: #9f1239;
+  font-weight: 700;
+}
+
+.book-flash-countdown b {
+  padding: 3px 7px;
+  border-radius: 6px;
+  color: #fff;
+  background: #c92127;
+}
+
 .book-sale-price {
   color: #c92127;
   font-size: 32px;

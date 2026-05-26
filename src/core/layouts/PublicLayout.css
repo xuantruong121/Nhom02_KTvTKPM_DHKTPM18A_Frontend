@@ -28,15 +28,15 @@
 .public-header-main,
 .public-nav,
 .public-footer {
-  max-width: 1240px;
+  max-width: 1480px;
   margin: 0 auto;
 }
 
 .public-header-main {
   display: grid;
-  grid-template-columns: auto auto minmax(260px, 1fr) auto;
+  grid-template-columns: auto minmax(520px, 1fr) auto;
   align-items: center;
-  gap: 14px;
+  gap: 18px;
   padding: 14px 24px 12px;
 }
 
@@ -60,6 +60,7 @@
 
 .public-search {
   width: 100%;
+  min-width: 0;
 }
 
 .public-suggestion {
@@ -102,7 +103,7 @@
 .public-nav {
   display: flex;
   align-items: center;
-  gap: 28px;
+  gap: 26px;
   padding: 0 24px 12px;
   overflow-x: auto;
 }
@@ -132,6 +133,61 @@
 
 .public-mega-group a {
   color: #475569;
+}
+
+.public-notification-panel {
+  width: min(380px, 86vw);
+}
+
+.public-notification-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.public-notification-list {
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+.public-notification-list .ant-list-item {
+  padding: 0;
+  border-block-end-color: #f1f5f9;
+}
+
+.public-notification-list .ant-list-item a {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  padding: 10px 8px;
+  color: #334155;
+}
+
+.public-notification-list .ant-list-item.unread a {
+  background: #fff7ed;
+}
+
+.public-notification-list .ant-list-item a:hover {
+  color: #c92127;
+  text-decoration: none;
+}
+
+.public-notification-list strong,
+.public-notification-list span {
+  white-space: normal;
+}
+
+.public-notification-list span {
+  color: #475569;
+  font-size: 13px;
+}
+
+.public-notification-list small {
+  color: #94a3b8;
 }
 
 .public-content {
