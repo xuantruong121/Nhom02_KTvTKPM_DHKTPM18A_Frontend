@@ -29,48 +29,22 @@ import { Link } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { useApiQuery } from '@/shared/hooks/useApiQuery'
 import { useApiMutation } from '@/shared/hooks/useApiQuery'
-import { accountApi, type AddressDto, type AddressRequest } from '@/modules/account/api/accountApi'
-import vnUnitsSql from '../../../../../data_VN/postgres_ImportData_vn_units.sql?raw'
+import {
+  accountApi,
+  type AddressDto,
+  type AddressRequest,
+  type AdministrativeProvinceDto,
+} from '@/modules/account/api/accountApi'
 
 const PROFILE_QUERY_KEY = ['account', 'profile']
 
 type AddressFormValues = AddressRequest
 
-type ProvinceOption = {
-  code: string
-  name: string
-}
-
-type WardOption = {
-  code: string
-  provinceCode: string
-  name: string
-}
-
-function parseVietnamUnits(sql: string) {
-  const provincePattern = /\('([^']+)','[^']*','[^']*','([^']+)','[^']*','[^']*',\d+\)/g
-  const wardPattern = /\('([^']+)','[^']*','[^']*','([^']*)','[^']*','[^']*','([^']+)',\d+\)/g
-  const provinces: ProvinceOption[] = []
-  const wards: WardOption[] = []
-  let match: RegExpExecArray | null
-
-  while ((match = provincePattern.exec(sql))) {
-    provinces.push({ code: match[1], name: match[2] })
-  }
-
-  while ((match = wardPattern.exec(sql))) {
-    wards.push({ code: match[1], name: match[2], provinceCode: match[3] })
-  }
-
-  return { provinces, wards }
-}
-
-const vietnamUnits = parseVietnamUnits(vnUnitsSql)
-
 function AddressModal({
   open,
   initial,
   defaults,
+  addressUnits,
   onClose,
   onSave,
   saving,
@@ -78,16 +52,15 @@ function AddressModal({
   open: boolean
   initial?: AddressDto | null
   defaults?: { recipientName?: string; phoneNumber?: string }
+  addressUnits: AdministrativeProvinceDto[]
   onClose: () => void
   onSave: (values: AddressRequest) => void
   saving: boolean
 }) {
   const [form] = Form.useForm<AddressFormValues>()
   const selectedCity = Form.useWatch('city', form)
-  const selectedProvince = vietnamUnits.provinces.find((province) => province.name === selectedCity)
-  const wardOptions = selectedProvince
-    ? vietnamUnits.wards.filter((ward) => ward.provinceCode === selectedProvince.code)
-    : []
+  const selectedProvince = addressUnits.find((province) => province.name === selectedCity)
+  const wardOptions = selectedProvince?.wards ?? []
 
   useEffect(() => {
     if (open) {
@@ -190,7 +163,7 @@ function AddressModal({
                 showSearch
                 optionFilterProp="label"
                 placeholder="Chọn tỉnh/thành phố"
-                options={vietnamUnits.provinces.map((province) => ({
+                options={addressUnits.map((province) => ({
                   value: province.name,
                   label: province.name,
                 }))}
@@ -236,6 +209,9 @@ export default function AddressPage() {
   const [saving, setSaving] = useState(false)
 
   const { data: profile, isLoading } = useApiQuery(PROFILE_QUERY_KEY, () => accountApi.getProfile())
+  const { data: addressUnits = [] } = useApiQuery(['account', 'addressUnits'], () =>
+    accountApi.getAddressUnits()
+  )
 
   const addresses = profile?.addresses ?? []
 
@@ -388,6 +364,7 @@ export default function AddressPage() {
         open={modalOpen}
         initial={editTarget}
         defaults={{ recipientName: profile?.fullName, phoneNumber: profile?.phoneNumber }}
+        addressUnits={addressUnits}
         onClose={() => {
           setModalOpen(false)
           setEditTarget(null)
