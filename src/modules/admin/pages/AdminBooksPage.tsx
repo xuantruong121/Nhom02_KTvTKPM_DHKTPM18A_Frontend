@@ -6,6 +6,7 @@ import type { Dayjs } from 'dayjs'
 import { adminApi, type AdminBook, type BookPayload } from '@/modules/admin/api/adminApi'
 import { invalidateCatalogStockCaches } from '@/modules/admin/utils/invalidateAdminCaches'
 import { matchesKeyword } from '@/modules/admin/utils/search'
+import { compareNumber, compareText } from '@/modules/admin/utils/tableSort'
 import StaffBookModal from '@/modules/staff/components/StaffBookModal'
 import { useApiMutation, useApiQuery } from '@/shared/hooks/useApiQuery'
 
@@ -34,9 +35,7 @@ export default function AdminBooksPage({ canDelete = true }: AdminBooksPageProps
   )
   const hasSalesDateFilter = Boolean(salesFilters.from || salesFilters.to)
 
-  const booksQuery = useApiQuery(['admin', 'books'], () => adminApi.getBooks(), {
-    refetchInterval: 5_000,
-  })
+  const booksQuery = useApiQuery(['admin', 'books'], () => adminApi.getBooks())
   const bookSalesQuery = useApiQuery(['admin', 'bookSales', salesFilters], () =>
     adminApi.getBookSales(salesFilters)
   )
@@ -76,6 +75,7 @@ export default function AdminBooksPage({ canDelete = true }: AdminBooksPageProps
           book.author,
           book.publisher,
           book.isbn,
+          book.publicationYear,
           book.price,
           book.quantity,
           salesByBookId.get(book.id)?.quantitySold ?? 0
@@ -102,9 +102,18 @@ export default function AdminBooksPage({ canDelete = true }: AdminBooksPageProps
           <Typography.Text type="secondary">{book.author}</Typography.Text>
         </Space>
       ),
+      sorter: (a, b) => compareText(a.title, b.title),
     },
-    { title: 'Giá', dataIndex: 'price', render: money, width: 130 },
-    { title: 'Tồn', dataIndex: 'quantity', width: 90 },
+    { title: 'Giá', dataIndex: 'price', render: money, width: 130, sorter: (a, b) => compareNumber(a.price, b.price) },
+    { title: 'ISBN', dataIndex: 'isbn', width: 150, sorter: (a, b) => compareText(a.isbn, b.isbn) },
+    {
+      title: 'Năm XB',
+      dataIndex: 'publicationYear',
+      width: 110,
+      sorter: (a, b) => compareNumber(a.publicationYear, b.publicationYear),
+      render: (value?: number) => value ?? '-',
+    },
+    { title: 'Tồn', dataIndex: 'quantity', width: 90, sorter: (a, b) => compareNumber(a.quantity, b.quantity) },
     {
       title: 'Bán ra',
       width: 110,
@@ -128,6 +137,7 @@ export default function AdminBooksPage({ canDelete = true }: AdminBooksPageProps
         <Tag color={(book.active ?? book.isActive ?? true) ? 'green' : 'red'}>ACTIVE</Tag>
       ),
       width: 120,
+      sorter: (a, b) => Number(a.active ?? a.isActive ?? true) - Number(b.active ?? b.isActive ?? true),
     },
     {
       title: '',
@@ -182,8 +192,8 @@ export default function AdminBooksPage({ canDelete = true }: AdminBooksPageProps
         <Space direction="vertical" size="middle" style={{ width: '100%' }}>
           <Input.Search
             allowClear
-            placeholder="Tim theo ten sach, tac gia, NXB, ISBN"
-            style={{ maxWidth: 360 }}
+            placeholder="Tìm theo tên sách, tác giả, NXB, ISBN, năm xuất bản"
+            style={{ maxWidth: 460 }}
             value={keyword}
             onChange={(event) => setKeyword(event.target.value)}
           />

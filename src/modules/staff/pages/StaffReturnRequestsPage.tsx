@@ -10,6 +10,7 @@ import {
 } from '@/modules/admin/api/adminApi'
 import { invalidateAdminReturnCaches } from '@/modules/admin/utils/invalidateAdminCaches'
 import { matchesKeyword } from '@/modules/admin/utils/search'
+import { compareNumber, compareText } from '@/modules/admin/utils/tableSort'
 import { useApiMutation, useApiQuery } from '@/shared/hooks/useApiQuery'
 
 type ReturnAction = 'approve' | 'receive' | 'refund' | 'reject'
@@ -75,10 +76,10 @@ export default function StaffReturnRequestsPage() {
   )
 
   const columns: ColumnsType<ReturnRequest> = [
-    { title: 'Mã', dataIndex: 'id', width: 120 },
-    { title: 'Đơn hàng', dataIndex: 'orderId', width: 120 },
-    { title: 'Khách', dataIndex: 'customerId', width: 100 },
-    { title: 'Lý do', dataIndex: 'reason' },
+    { title: 'Mã', dataIndex: 'id', width: 120, sorter: (a, b) => compareText(a.id, b.id) },
+    { title: 'Đơn hàng', dataIndex: 'orderId', width: 120, sorter: (a, b) => compareNumber(a.orderId, b.orderId) },
+    { title: 'Khách', dataIndex: 'customerId', width: 100, sorter: (a, b) => compareNumber(a.customerId, b.customerId) },
+    { title: 'Lý do', dataIndex: 'reason', sorter: (a, b) => compareText(a.reason, b.reason) },
     {
       title: 'Trạng thái',
       dataIndex: 'status',
@@ -86,6 +87,7 @@ export default function StaffReturnRequestsPage() {
         <Tag color={value === 'REJECTED' ? 'red' : 'blue'}>{value}</Tag>
       ),
       width: 140,
+      sorter: (a, b) => compareText(a.status, b.status),
     },
     {
       title: 'Thao tác',
@@ -135,7 +137,7 @@ export default function StaffReturnRequestsPage() {
         <Space direction="vertical" size="middle" style={{ width: '100%' }}>
           <Input.Search
             allowClear
-            placeholder="Tim theo ma tra hang, don hang, khach, ly do"
+            placeholder="Tìm theo mã trả hàng, đơn hàng, khách, lý do"
             style={{ maxWidth: 420 }}
             value={keyword}
             onChange={(event) => setKeyword(event.target.value)}

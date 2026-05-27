@@ -1,7 +1,8 @@
 import { Spin } from 'antd'
 import type { ReactNode } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
-import { useAuthInitializing, useIsAuthenticated } from '@/shared/store/authStore'
+import { homePathForRole } from '@/modules/auth/utils/roleRedirect'
+import { useAuthInitializing, useAuthUser } from '@/shared/store/authStore'
 
 type Props = {
   children: ReactNode
@@ -9,7 +10,7 @@ type Props = {
 
 export default function ProtectedRoute({ children }: Props) {
   const isInitializing = useAuthInitializing()
-  const isAuthenticated = useIsAuthenticated()
+  const user = useAuthUser()
   const location = useLocation()
 
   if (isInitializing) {
@@ -19,8 +20,11 @@ export default function ProtectedRoute({ children }: Props) {
       </div>
     )
   }
-  if (!isAuthenticated) {
+  if (!user) {
     return <Navigate to="/auth/login" replace state={{ from: location.pathname }} />
+  }
+  if (user.role !== 'CUSTOMER') {
+    return <Navigate to={homePathForRole(user.role)} replace />
   }
   return <>{children}</>
 }

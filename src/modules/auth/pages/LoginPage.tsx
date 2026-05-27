@@ -5,7 +5,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { getErrorMessage } from '@/shared/api/http'
 import { useAuth } from '@/modules/auth/hooks/useAuth'
 import type { LoginRequest, UserRole } from '@/modules/auth/types'
-import { homePathForRole } from '@/modules/auth/utils/roleRedirect'
+import { homePathForRole, isPathAllowedForRoles } from '@/modules/auth/utils/roleRedirect'
 
 type LocationState = { from?: string; fromRegister?: boolean; email?: string }
 
@@ -55,7 +55,11 @@ export default function LoginPage({
         setError('Tài khoản này không có quyền truy cập khu vực đã chọn.')
         return
       }
-      navigate(fallback ?? defaultRedirect ?? homePathForRole(user.role), { replace: true })
+      const redirectPath =
+        allowedRoles && isPathAllowedForRoles(fallback, allowedRoles)
+          ? fallback ?? defaultRedirect ?? homePathForRole(user.role)
+          : defaultRedirect ?? homePathForRole(user.role)
+      navigate(redirectPath, { replace: true })
     } catch (err) {
       setError(getErrorMessage(err))
     } finally {

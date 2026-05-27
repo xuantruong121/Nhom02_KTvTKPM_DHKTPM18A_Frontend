@@ -1,0 +1,106 @@
+.admin-dashboard {
+  width: 100%;
+}
+
+.admin-dashboard-header {
+  align-items: flex-start;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+}
+
+.admin-dashboard-header h3 {
+  margin: 0 0 4px;
+}
+
+.admin-kpi-card {
+  min-height: 138px;
+}
+
+.admin-kpi-card .ant-card-body {
+  height: 100%;
+}
+
+.admin-kpi-content {
+  align-items: flex-start;
+  display: flex;
+  gap: 14px;
+}
+
+.admin-kpi-content h4 {
+  font-size: 24px;
+  margin: 6px 0 8px;
+}
+
+.admin-kpi-icon {
+  align-items: center;
+  border-radius: 8px;
+  display: inline-flex;
+  flex: 0 0 42px;
+  font-size: 20px;
+  height: 42px;
+  justify-content: center;
+}
+
+.admin-kpi-blue .admin-kpi-icon {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.admin-kpi-green .admin-kpi-icon {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.admin-kpi-amber .admin-kpi-icon {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.admin-kpi-red .admin-kpi-icon {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.admin-kpi-violet .admin-kpi-icon {
+  background: #ede9fe;
+  color: #6d28d9;
+}
+
+.admin-kpi-slate .admin-kpi-icon {
+  background: #e2e8f0;
+  color: #334155;
+}
+
+.admin-book-cover {
+  background: #f1f5f9;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+.admin-category-list {
+  width: 100%;
+}
+
+.admin-category-row {
+  border-bottom: 1px solid #f1f5f9;
+  display: grid;
+  gap: 8px;
+  padding: 8px 0;
+}
+
+.admin-category-row:last-child {
+  border-bottom: 0;
+}
+
+.admin-category-row .ant-typography-secondary {
+  display: block;
+  font-size: 12px;
+}
+
+@media (max-width: 900px) {
+  .admin-dashboard-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}

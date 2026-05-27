@@ -5,6 +5,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import dayjs from 'dayjs'
 import { useMemo, useState } from 'react'
 import { adminApi, type AdminReview } from '@/modules/admin/api/adminApi'
+import { compareDate, compareNumber, compareText } from '@/modules/admin/utils/tableSort'
 import { useApiMutation, useApiQuery } from '@/shared/hooks/useApiQuery'
 
 export default function AdminReviewsPage() {
@@ -46,6 +47,7 @@ export default function AdminReviewsPage() {
           <Typography.Text type="secondary">Mã sách: {review.bookId}</Typography.Text>
         </Space>
       ),
+      sorter: (a, b) => compareText(a.bookTitle, b.bookTitle),
     },
     {
       title: 'Người đánh giá',
@@ -57,30 +59,35 @@ export default function AdminReviewsPage() {
           </Typography.Text>
         </Space>
       ),
+      sorter: (a, b) => compareText(a.reviewerName || a.reviewerEmail, b.reviewerName || b.reviewerEmail),
     },
     {
       title: 'Số sao',
       dataIndex: 'rating',
       width: 140,
       render: (value: number) => <Rate disabled value={value} style={{ fontSize: 14 }} />,
+      sorter: (a, b) => compareNumber(a.rating, b.rating),
     },
     {
       title: 'Nội dung',
       dataIndex: 'content',
       render: (value?: string | null) =>
         value || <Typography.Text type="secondary">Không có nội dung</Typography.Text>,
+      sorter: (a, b) => compareText(a.content, b.content),
     },
     {
       title: 'Sửa',
       dataIndex: 'editCount',
       width: 120,
       render: (value: number) => <Tag color={value > 0 ? 'orange' : 'green'}>{value}/1 lần</Tag>,
+      sorter: (a, b) => compareNumber(a.editCount, b.editCount),
     },
     {
       title: 'Cập nhật',
       dataIndex: 'updatedAt',
       width: 160,
       render: (value?: string) => (value ? dayjs(value).format('DD/MM/YYYY HH:mm') : ''),
+      sorter: (a, b) => compareDate(a.updatedAt, b.updatedAt),
     },
     {
       title: '',

@@ -3,6 +3,7 @@ import type { ColumnsType } from 'antd/es/table'
 import { useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
 import { adminApi, type AdminUser, type CreateStaffPayload, type StaffRole } from '@/modules/admin/api/adminApi'
+import { compareNumber, compareText } from '@/modules/admin/utils/tableSort'
 import { useApiMutation, useApiQuery } from '@/shared/hooks/useApiQuery'
 
 const ROLE_OPTIONS: AdminUser['role'][] = ['ADMIN', 'STAFF_SELLER', 'STAFF_WAREHOUSE', 'CUSTOMER', 'GUEST']
@@ -57,7 +58,7 @@ export default function AdminUsersPage() {
   }, [enabled, keyword, role, usersQuery.data])
 
   const columns: ColumnsType<AdminUser> = [
-    { title: 'ID', dataIndex: 'id', width: 80 },
+    { title: 'ID', dataIndex: 'id', width: 80, sorter: (a, b) => compareNumber(a.id, b.id) },
     {
       title: 'Người dùng',
       render: (_, user) => (
@@ -66,18 +67,21 @@ export default function AdminUsersPage() {
           <Typography.Text type="secondary">{user.email}</Typography.Text>
         </Space>
       ),
+      sorter: (a, b) => compareText(a.fullName, b.fullName),
     },
     {
       title: 'Vai trò',
       dataIndex: 'role',
       width: 180,
       render: (value: AdminUser['role']) => <Tag color={ROLE_COLOR[value]}>{value}</Tag>,
+      sorter: (a, b) => compareText(a.role, b.role),
     },
     {
       title: 'Trạng thái',
       dataIndex: 'enabled',
       width: 150,
       render: (value: boolean) => <Tag color={value ? 'green' : 'red'}>{value ? 'Đang hoạt động' : 'Đã khóa'}</Tag>,
+      sorter: (a, b) => Number(a.enabled) - Number(b.enabled),
     },
     {
       title: '',

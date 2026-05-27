@@ -6,6 +6,7 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { adminApi, type Coupon, type DiscountType } from '@/modules/admin/api/adminApi'
 import { matchesKeyword } from '@/modules/admin/utils/search'
+import { compareDate, compareNumber, compareText } from '@/modules/admin/utils/tableSort'
 import { useApiMutation, useApiQuery } from '@/shared/hooks/useApiQuery'
 
 function money(value: number | string | undefined) {
@@ -58,6 +59,7 @@ export default function AdminPromotionsPage() {
       dataIndex: 'name',
       width: 220,
       ellipsis: true,
+      sorter: (a, b) => compareText(a.name, b.name),
     },
     {
       title: 'Code',
@@ -65,6 +67,7 @@ export default function AdminPromotionsPage() {
       render: (value: string) => <Tag color="purple">{value}</Tag>,
       width: 150,
       ellipsis: true,
+      sorter: (a, b) => compareText(a.code, b.code),
     },
     {
       title: 'Loại',
@@ -74,12 +77,13 @@ export default function AdminPromotionsPage() {
         const meta = discountTypeMeta[value] ?? { label: value, color: 'default' }
         return <Tag color={meta.color}>{meta.label}</Tag>
       },
+      sorter: (a, b) => compareText(discountTypeMeta[a.discountType]?.label, discountTypeMeta[b.discountType]?.label),
     },
-    { title: 'Giá trị', dataIndex: 'discountValue', render: money, width: 140 },
-    { title: 'Bắt đầu', dataIndex: 'startDate', render: dateTime, width: 160 },
-    { title: 'Kết thúc', dataIndex: 'endDate', render: dateTime, width: 160 },
-    { title: 'Số lượng', dataIndex: 'usageLimit', render: usage, width: 130 },
-    { title: 'Đã dùng', dataIndex: 'usedCount', render: money, width: 100 },
+    { title: 'Giá trị', dataIndex: 'discountValue', render: money, width: 140, sorter: (a, b) => compareNumber(a.discountValue, b.discountValue) },
+    { title: 'Bắt đầu', dataIndex: 'startDate', render: dateTime, width: 160, sorter: (a, b) => compareDate(a.startDate, b.startDate) },
+    { title: 'Kết thúc', dataIndex: 'endDate', render: dateTime, width: 160, sorter: (a, b) => compareDate(a.endDate, b.endDate) },
+    { title: 'Số lượng', dataIndex: 'usageLimit', render: usage, width: 130, sorter: (a, b) => compareNumber(a.usageLimit, b.usageLimit) },
+    { title: 'Đã dùng', dataIndex: 'usedCount', render: money, width: 100, sorter: (a, b) => compareNumber(a.usedCount, b.usedCount) },
     {
       title: 'Còn lại',
       render: (_, coupon) =>
@@ -87,12 +91,18 @@ export default function AdminPromotionsPage() {
           ? Math.max(0, coupon.usageLimit - coupon.usedCount).toLocaleString('vi-VN')
           : 'Không giới hạn',
       width: 130,
+      sorter: (a, b) =>
+        compareNumber(
+          a.usageLimit ? Math.max(0, a.usageLimit - a.usedCount) : Number.MAX_SAFE_INTEGER,
+          b.usageLimit ? Math.max(0, b.usageLimit - b.usedCount) : Number.MAX_SAFE_INTEGER
+        ),
     },
     {
       title: 'Đang bật',
       dataIndex: 'isActive',
       render: (value: boolean) => <Switch checked={value} disabled />,
       width: 110,
+      sorter: (a, b) => Number(a.isActive) - Number(b.isActive),
     },
     {
       title: '',

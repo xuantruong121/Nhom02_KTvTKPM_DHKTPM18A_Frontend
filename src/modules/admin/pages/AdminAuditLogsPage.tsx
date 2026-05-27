@@ -3,6 +3,7 @@ import type { ColumnsType } from 'antd/es/table'
 import { useMemo, useState } from 'react'
 import { adminApi, type AuditLog } from '@/modules/admin/api/adminApi'
 import { matchesKeyword } from '@/modules/admin/utils/search'
+import { compareDate, compareText } from '@/modules/admin/utils/tableSort'
 import { useApiQuery } from '@/shared/hooks/useApiQuery'
 
 function formatDate(value?: string) {
@@ -33,12 +34,13 @@ export default function AdminAuditLogsPage() {
   )
 
   const columns: ColumnsType<AuditLog> = [
-    { title: 'Thời gian', dataIndex: 'createdAt', width: 180, render: formatDate },
+    { title: 'Thời gian', dataIndex: 'createdAt', width: 180, render: formatDate, sorter: (a, b) => compareDate(a.createdAt, b.createdAt) },
     {
       title: 'Người thao tác',
       dataIndex: 'userId',
       width: 220,
       render: (value?: string) => value || 'SYSTEM',
+      sorter: (a, b) => compareText(a.userId, b.userId),
     },
     {
       title: 'Nhóm',
@@ -47,15 +49,17 @@ export default function AdminAuditLogsPage() {
       render: (value?: AuditLog['role']) => (
         <Tag color={value === 'STAFF_WAREHOUSE' ? 'geekblue' : 'blue'}>{value}</Tag>
       ),
+      sorter: (a, b) => compareText(a.role, b.role),
     },
     {
       title: 'Hành động',
       dataIndex: 'action',
       width: 180,
       render: (value: string) => <Tag color="blue">{value}</Tag>,
+      sorter: (a, b) => compareText(a.action, b.action),
     },
-    { title: 'Đối tượng', dataIndex: 'target', ellipsis: true },
-    { title: 'Giá trị mới', dataIndex: 'newValue', ellipsis: true },
+    { title: 'Đối tượng', dataIndex: 'target', ellipsis: true, sorter: (a, b) => compareText(a.target, b.target) },
+    { title: 'Giá trị mới', dataIndex: 'newValue', ellipsis: true, sorter: (a, b) => compareText(a.newValue, b.newValue) },
   ]
 
   return (
@@ -67,7 +71,7 @@ export default function AdminAuditLogsPage() {
         <Space direction="vertical" size="middle" style={{ width: '100%' }}>
           <Input.Search
             allowClear
-            placeholder="Tim theo nguoi thao tac, nhom, hanh dong, doi tuong"
+            placeholder="Tìm theo người thao tác, nhóm, hành động, đối tượng"
             style={{ maxWidth: 420 }}
             value={keyword}
             onChange={(event) => setKeyword(event.target.value)}

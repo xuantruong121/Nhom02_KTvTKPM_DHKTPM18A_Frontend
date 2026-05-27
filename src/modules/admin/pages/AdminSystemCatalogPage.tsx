@@ -3,6 +3,7 @@ import type { ColumnsType } from 'antd/es/table'
 import { useMemo, useState } from 'react'
 import { adminApi } from '@/modules/admin/api/adminApi'
 import { matchesKeyword } from '@/modules/admin/utils/search'
+import { compareNumber, compareText } from '@/modules/admin/utils/tableSort'
 import CategoryManagementPage from '@/modules/catalog/pages/CategoryManagementPage'
 import { useApiQuery } from '@/shared/hooks/useApiQuery'
 
@@ -33,8 +34,8 @@ export default function AdminSystemCatalogPage() {
   )
 
   const authorColumns: ColumnsType<AuthorRow> = [
-    { title: 'Tác giả', dataIndex: 'name' },
-    { title: 'Số sách', dataIndex: 'bookCount', width: 120 },
+    { title: 'Tác giả', dataIndex: 'name', sorter: (a, b) => compareText(a.name, b.name) },
+    { title: 'Số sách', dataIndex: 'bookCount', width: 120, sorter: (a, b) => compareNumber(a.bookCount, b.bookCount) },
   ]
 
   return (
@@ -57,7 +58,7 @@ export default function AdminSystemCatalogPage() {
                 <Space direction="vertical" size="middle" style={{ width: '100%' }}>
                   <Input.Search
                     allowClear
-                    placeholder="Tim theo ten tac gia"
+                    placeholder="Tìm theo tên tác giả"
                     style={{ maxWidth: 320 }}
                     value={authorKeyword}
                     onChange={(event) => setAuthorKeyword(event.target.value)}

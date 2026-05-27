@@ -239,6 +239,7 @@ export type AdminUser = {
   fullName: string
   role: 'ADMIN' | 'STAFF_SELLER' | 'STAFF_WAREHOUSE' | 'CUSTOMER' | 'GUEST'
   enabled: boolean
+  createdAt?: string
 }
 
 export type StaffRole = 'STAFF_SELLER' | 'STAFF_WAREHOUSE'

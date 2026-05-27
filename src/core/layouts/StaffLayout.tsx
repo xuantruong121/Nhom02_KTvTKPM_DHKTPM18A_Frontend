@@ -136,7 +136,7 @@ function StaffLayoutImpl() {
             <Typography.Text strong>{user?.email}</Typography.Text>
             <Tag color={roleTagColor}>{user?.role}</Tag>
             <Typography.Link onClick={handleLogout}>
-              <LogoutOutlined /> Dang xuat
+              <LogoutOutlined /> Đăng xuất
             </Typography.Link>
           </Space>
         </Header>
