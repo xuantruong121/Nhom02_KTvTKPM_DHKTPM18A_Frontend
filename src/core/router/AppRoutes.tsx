@@ -226,7 +226,7 @@ export default function AppRoutes() {
           path="books"
           element={
             <RoleRoute allowed={['STAFF_WAREHOUSE']} loginPath="/staff/login">
-              <AdminBooksPage canDelete={false} />
+              <AdminBooksPage canDelete={false} showSalesStats={false} />
             </RoleRoute>
           }
         />

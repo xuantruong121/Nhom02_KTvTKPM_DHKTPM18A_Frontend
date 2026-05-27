@@ -5,6 +5,9 @@ export type RealtimeEventType =
   | 'PAYMENT_FAILED'
   | 'INVENTORY_INCREASED'
   | 'INVENTORY_DECREASED'
+  | 'REVIEW_UPDATED'
+  | 'REVIEW_NEEDS_ACTION'
+  | 'RETURN_STATUS_CHANGED'
 
 export type RealtimeEvent = {
   type: RealtimeEventType

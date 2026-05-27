@@ -459,6 +459,17 @@ export function BookDetailPage() {
                       <Typography.Text>
                         {review.content || 'Người dùng chưa nhập nội dung đánh giá.'}
                       </Typography.Text>
+                      {review.adminPublicReply ? (
+                        <div className="book-admin-reply">
+                          <Tag color="blue">Phản hồi từ cửa hàng</Tag>
+                          <Typography.Text>{review.adminPublicReply}</Typography.Text>
+                          {review.adminRepliedAt ? (
+                            <Typography.Text type="secondary">
+                              {dayjs(review.adminRepliedAt).format('DD/MM/YYYY HH:mm')}
+                            </Typography.Text>
+                          ) : null}
+                        </div>
+                      ) : null}
                       <Typography.Text type="secondary">
                         {review.updatedAt ? dayjs(review.updatedAt).format('DD/MM/YYYY HH:mm') : ''}
                       </Typography.Text>

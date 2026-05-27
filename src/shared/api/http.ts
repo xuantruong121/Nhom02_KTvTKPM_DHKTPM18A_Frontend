@@ -27,7 +27,7 @@ function attachRequestInterceptor(client: AxiosInstance) {
       config.headers.set('Authorization', `Bearer ${token}`)
     }
     config.headers.set('X-Device-ID', getDeviceId())
-    if (!config.headers.has('Content-Type') && config.data !== undefined) {
+    if (!config.headers.has('Content-Type') && config.data !== undefined && !(config.data instanceof FormData)) {
       config.headers.set('Content-Type', 'application/json')
     }
     return config

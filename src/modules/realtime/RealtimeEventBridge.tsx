@@ -50,6 +50,21 @@ export default function RealtimeEventBridge() {
       }
     }
 
+    const invalidateReviewCaches = (bookId?: number | null) => {
+      void queryClient.invalidateQueries({ queryKey: ['admin', 'reviews'] })
+      void queryClient.invalidateQueries({ queryKey: ['admin', 'dashboard'] })
+      if (bookId) {
+        void queryClient.invalidateQueries({ queryKey: ['catalog', 'book', bookId, 'reviews'] })
+        void queryClient.invalidateQueries({ queryKey: ['catalog', 'book', bookId] })
+      }
+    }
+
+    const invalidateReturnCaches = () => {
+      void queryClient.invalidateQueries({ queryKey: ['returns'] })
+      void queryClient.invalidateQueries({ queryKey: ['staff', 'returns'] })
+      void queryClient.invalidateQueries({ queryKey: ['admin', 'dashboard'] })
+    }
+
     eventSource.addEventListener('notification', () => {
       void queryClient.invalidateQueries({ queryKey: ['notifications'] })
     })
@@ -94,6 +109,26 @@ export default function RealtimeEventBridge() {
         case 'INVENTORY_INCREASED':
         case 'INVENTORY_DECREASED':
           invalidateInventoryCaches(payload.bookId)
+          break
+        case 'REVIEW_UPDATED':
+        case 'REVIEW_NEEDS_ACTION':
+          invalidateReviewCaches(payload.bookId)
+          if (user.role === 'ADMIN') {
+            notification.warning({
+              message: payload.message || 'Có đánh giá mới',
+              description: payload.bookId ? `Mã sách: #${payload.bookId}` : undefined,
+              placement: 'topRight',
+            })
+          }
+          break
+        case 'RETURN_STATUS_CHANGED':
+          invalidateReturnCaches()
+          if (user.role === 'CUSTOMER') {
+            notification.info({
+              message: payload.message || 'Yêu cầu trả hàng đã được cập nhật',
+              placement: 'topRight',
+            })
+          }
           break
         default:
           break
