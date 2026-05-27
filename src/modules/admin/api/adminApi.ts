@@ -93,6 +93,7 @@ export type DiscountType = 'PERCENTAGE' | 'FIXED_AMOUNT'
 export type Coupon = {
   id: number
   code: string
+  name: string
   description?: string
   discountType: DiscountType
   discountValue: Money
@@ -109,6 +110,7 @@ export type Coupon = {
 
 export type CouponPayload = {
   code?: string
+  name: string
   description?: string
   discountType?: DiscountType
   discountValue: number

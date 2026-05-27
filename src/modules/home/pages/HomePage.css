@@ -147,31 +147,11 @@
   background: #c92127;
 }
 
-.home-shortcuts {
-  display: grid;
-  grid-template-columns: repeat(7, minmax(120px, 1fr));
-  gap: 12px;
-}
-
-.home-shortcut,
 .home-text-tile,
 .home-brand-grid button {
   border: 1px solid #ececec;
   background: #fff;
   cursor: pointer;
-}
-
-.home-shortcut {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  min-height: 68px;
-  border-radius: 8px;
-}
-
-.home-shortcut span {
-  font-size: 24px;
 }
 
 .home-countdown {
@@ -444,42 +424,12 @@
   font-weight: 800;
 }
 
-.home-combo-grid {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(160px, 1fr));
-  gap: 14px;
-}
-
-.home-combo {
-  padding: 14px;
-  border: 1px solid #f1f5f9;
-  border-radius: 8px;
-  background: #fff;
-}
-
-.home-combo-covers {
-  display: flex;
-  min-height: 112px;
-  margin-bottom: 10px;
-}
-
-.home-combo-covers img {
-  width: 70px;
-  height: 104px;
-  margin-right: -14px;
-  border-radius: 5px;
-  object-fit: cover;
-  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.16);
-}
-
-.home-combo strong,
-.home-combo span {
-  display: block;
-}
-
-.home-combo span {
-  color: #64748b;
+.home-recommendation-reason {
+  min-height: 20px;
+  margin-top: 8px;
+  color: #0f766e;
   font-size: 13px;
+  font-weight: 600;
 }
 
 .home-category-modal-grid {
@@ -515,12 +465,10 @@
     grid-template-columns: 1fr;
   }
 
-  .home-shortcuts,
   .home-tile-grid.featured,
   .home-tile-grid.shelf,
   .home-tile-grid.collection,
-  .home-brand-grid,
-  .home-combo-grid {
+  .home-brand-grid {
     grid-template-columns: repeat(3, minmax(120px, 1fr));
   }
 }
@@ -539,12 +487,10 @@
     font-size: 30px;
   }
 
-  .home-shortcuts,
   .home-tile-grid.featured,
   .home-tile-grid.shelf,
   .home-tile-grid.collection,
   .home-brand-grid,
-  .home-combo-grid,
   .home-ranking-list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }

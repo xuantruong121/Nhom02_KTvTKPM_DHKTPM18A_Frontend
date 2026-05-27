@@ -103,6 +103,7 @@
 .public-nav {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 26px;
   padding: 0 24px 12px;
   overflow-x: auto;
@@ -261,6 +262,10 @@
 
   .public-actions {
     flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
+  .public-nav {
     justify-content: flex-start;
   }
 

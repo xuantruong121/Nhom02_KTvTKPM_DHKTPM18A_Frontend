@@ -45,6 +45,10 @@ type FlashSaleGroup = {
   items: FlashSale[]
 }
 
+function isGroupExpired(group: FlashSaleGroup) {
+  return dayjs(group.endAt).isBefore(dayjs())
+}
+
 function money(value: number | string | undefined) {
   return `${Number(value ?? 0).toLocaleString('vi-VN')} đ`
 }
@@ -478,6 +482,8 @@ export default function AdminFlashSalesPage() {
         ) : groupedFlashSales.length ? (
           groupedFlashSales.map((group) => {
             const activeCount = group.items.filter((sale) => sale.active).length
+            const expired = isGroupExpired(group)
+            const switchChecked = activeCount > 0 && !expired
             return (
               <Card
                 key={group.key}
@@ -488,15 +494,15 @@ export default function AdminFlashSalesPage() {
                       {dayjs(group.endAt).format('DD/MM/YYYY HH:mm')}
                     </Typography.Text>
                     <Tag color="blue">{group.items.length} sách</Tag>
-                    <Tag color={activeCount > 0 ? 'green' : 'default'}>{activeCount} đang bật</Tag>
                   </Space>
                 }
                 extra={
                   <Space>
                     <Button onClick={() => openEditGroupModal(group)}>Sửa</Button>
                     <Switch
-                      checked={activeCount > 0}
+                      checked={switchChecked}
                       loading={toggleMutation.isPending}
+                      disabled={expired}
                       onChange={(active) => toggleMutation.mutate({ sales: group.items, active })}
                     />
                     <Button type="primary" onClick={() => openAddToGroupModal(group)}>

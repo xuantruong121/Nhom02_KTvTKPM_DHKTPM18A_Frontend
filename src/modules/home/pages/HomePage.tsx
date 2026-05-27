@@ -4,7 +4,6 @@ import {
   FireOutlined,
   GiftOutlined,
   LeftOutlined,
-  PercentageOutlined,
   RightOutlined,
   RocketOutlined,
   StarFilled,
@@ -47,15 +46,6 @@ const currencyFormatter = new Intl.NumberFormat('vi-VN', {
   maximumFractionDigits: 0,
 })
 
-const quickActions = [
-  { label: 'Flash Sale', icon: <FireOutlined />, color: '#ef4444' },
-  { label: 'Mã giảm giá', icon: <PercentageOutlined />, color: '#f97316' },
-  { label: 'Sản phẩm mới', icon: <RocketOutlined />, color: '#2563eb' },
-  { label: 'Manga', icon: <BookOutlined />, color: '#7c3aed' },
-  { label: 'Ngoại văn', icon: <AppstoreOutlined />, color: '#0891b2' },
-  { label: 'Phiên chợ đồ cũ', icon: <TagsOutlined />, color: '#16a34a' },
-]
-
 const featuredCategories = [
   'Luyện Thi THCS, THPT',
   'Sách Lịch Sử',
@@ -68,14 +58,6 @@ const featuredCategories = [
   'Dụng Cụ Vẽ',
   'Quả Địa Cầu',
   'Gift Cards',
-]
-
-const comboTrending = [
-  'Combo Kinh Tế',
-  'Combo Sách Học Ngoại Ngữ',
-  'Combo Tâm Lý - Kĩ Năng Sống',
-  'Combo Văn Học',
-  'Combo Thiếu Nhi',
 ]
 
 const HOME_CATEGORY_PREVIEW_LIMIT = 5
@@ -269,6 +251,9 @@ export function HomePage() {
   const discoveryQuery = useApiQuery(['home', 'discovery'], () =>
     homeApi.getDiscovery({ limit: 8 })
   )
+  const recommendationsQuery = useApiQuery(['home', 'recommendations'], () =>
+    homeApi.getRecommendations({ limit: 8 })
+  )
   const activeFlashSaleQuery = useApiQuery(
     ['home', 'flash-sale', 'active'],
     () => homeApi.getActiveFlashSale(),
@@ -368,6 +353,7 @@ export function HomePage() {
   const shockSaleBooks = discoverySections.get('shock-sale') ?? deepDiscountedBooks.slice(0, 8)
   const salesRankingBooks = discoverySections.get('sales-ranking') ?? []
   const bestSellerRankingBooks = discoverySections.get('best-seller-ranking') ?? []
+  const recommendedBooks = recommendationsQuery.data ?? []
   const activeFlashSaleItems = activeFlashSaleQuery.data?.items ?? []
   const configuredFlashSaleProducts = activeFlashSaleItems.map((item) => ({
     ...item,
@@ -476,15 +462,6 @@ export function HomePage() {
             />
           </div>
         </Card>
-      </section>
-
-      <section className="home-shell home-shortcuts">
-        {quickActions.map((action) => (
-          <button type="button" className="home-shortcut" key={action.label}>
-            <span style={{ color: action.color }}>{action.icon}</span>
-            <strong>{action.label}</strong>
-          </button>
-        ))}
       </section>
 
       <section className="home-shell" id="flash-sale">
@@ -621,22 +598,25 @@ export function HomePage() {
         </Card>
       </section>
 
-      <section className="home-shell">
+      <section className="home-shell" id="recommendations">
         <Card className="home-section-card">
-          <SectionHeader icon={<GiftOutlined />} title="Combo Trending" />
-          <div className="home-combo-grid">
-            {comboTrending.map((combo, index) => (
-              <div className="home-combo" key={combo}>
-                <div className="home-combo-covers">
-                  {coverBooks.slice(index, index + 2).map((book) => (
-                    <img src={book.imageUrl ?? ''} alt={book.title} key={book.id} />
-                  ))}
-                </div>
-                <strong>{combo}</strong>
-                <span>Tiết kiệm hơn khi mua theo bộ</span>
-              </div>
-            ))}
-          </div>
+          <SectionHeader icon={<GiftOutlined />} title="Gợi ý dành cho bạn" action={null} />
+          {recommendationsQuery.isLoading ? (
+            <Skeleton active paragraph={{ rows: 4 }} />
+          ) : recommendedBooks.length ? (
+            <Row gutter={[16, 16]}>
+              {recommendedBooks.slice(0, 8).map((book) => (
+                <Col xs={12} sm={8} md={6} lg={6} key={book.id}>
+                  <ProductCard book={book} compact />
+                  <div className="home-recommendation-reason">
+                    {book.reason || 'Phù hợp để khám phá thêm'}
+                  </div>
+                </Col>
+              ))}
+            </Row>
+          ) : (
+            <Empty description="Chưa có gợi ý phù hợp" />
+          )}
         </Card>
       </section>
 

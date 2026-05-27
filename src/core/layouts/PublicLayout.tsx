@@ -7,6 +7,7 @@ import {
   GlobalOutlined,
   LoginOutlined,
   LogoutOutlined,
+  PercentageOutlined,
   RobotOutlined,
   SearchOutlined,
   ShoppingCartOutlined,
@@ -267,8 +268,7 @@ function PublicLayoutImpl() {
     <Layout className="public-layout">
       <Header className="public-header">
         <div className="public-announcement">
-          <span>Freeship cho đơn từ 250.000đ</span>
-          <span>Hotline: 1900 0000</span>
+          <span>Chào mừng bạn đến với SE Book – Thiên đường dành cho người yêu sách</span>
         </div>
         <div className="public-header-main">
           <Link to="/" className="public-logo" onClick={handleLogoClick}>
@@ -356,6 +356,9 @@ function PublicLayoutImpl() {
           </Link>
           <Link to="/#rankings" onClick={scrollToHomeSection('rankings')}>
             Bảng xếp hạng
+          </Link>
+          <Link to="/promotions">
+            <PercentageOutlined /> Mã giảm giá
           </Link>
         </nav>
       </Header>

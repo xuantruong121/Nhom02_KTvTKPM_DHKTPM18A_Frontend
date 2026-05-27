@@ -4,7 +4,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import dayjs from 'dayjs'
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { adminApi, type Coupon } from '@/modules/admin/api/adminApi'
+import { adminApi, type Coupon, type DiscountType } from '@/modules/admin/api/adminApi'
 import { matchesKeyword } from '@/modules/admin/utils/search'
 import { useApiMutation, useApiQuery } from '@/shared/hooks/useApiQuery'
 
@@ -18,6 +18,11 @@ function dateTime(value: string | undefined) {
 
 function usage(value: number | undefined) {
   return value ? value.toLocaleString('vi-VN') : 'Không giới hạn'
+}
+
+const discountTypeMeta: Record<DiscountType, { label: string; color: string }> = {
+  FIXED_AMOUNT: { label: 'Giảm tiền', color: 'green' },
+  PERCENTAGE: { label: 'Giảm %', color: 'blue' },
 }
 
 export default function AdminPromotionsPage() {
@@ -37,6 +42,7 @@ export default function AdminPromotionsPage() {
       (couponsQuery.data ?? []).filter((coupon) =>
         matchesKeyword(
           keyword,
+          coupon.name,
           coupon.code,
           coupon.description,
           coupon.discountType,
@@ -48,11 +54,27 @@ export default function AdminPromotionsPage() {
 
   const columns: ColumnsType<Coupon> = [
     {
+      title: 'Tên khuyến mãi',
+      dataIndex: 'name',
+      width: 220,
+      ellipsis: true,
+    },
+    {
       title: 'Code',
       dataIndex: 'code',
       render: (value: string) => <Tag color="purple">{value}</Tag>,
+      width: 150,
+      ellipsis: true,
     },
-    { title: 'Loại', dataIndex: 'discountType', width: 150 },
+    {
+      title: 'Loại',
+      dataIndex: 'discountType',
+      width: 130,
+      render: (value: DiscountType) => {
+        const meta = discountTypeMeta[value] ?? { label: value, color: 'default' }
+        return <Tag color={meta.color}>{meta.label}</Tag>
+      },
+    },
     { title: 'Giá trị', dataIndex: 'discountValue', render: money, width: 140 },
     { title: 'Bắt đầu', dataIndex: 'startDate', render: dateTime, width: 160 },
     { title: 'Kết thúc', dataIndex: 'endDate', render: dateTime, width: 160 },
@@ -102,7 +124,7 @@ export default function AdminPromotionsPage() {
         <Space direction="vertical" size="middle" style={{ width: '100%' }}>
           <Input.Search
             allowClear
-            placeholder="Tim theo ma coupon, mo ta, loai"
+            placeholder="Tìm theo tên, mã coupon, mô tả, loại"
             style={{ maxWidth: 360 }}
             value={keyword}
             onChange={(event) => setKeyword(event.target.value)}
@@ -112,7 +134,7 @@ export default function AdminPromotionsPage() {
             columns={columns}
             dataSource={coupons}
             loading={couponsQuery.isLoading}
-            scroll={{ x: 1120 }}
+            scroll={{ x: 1580 }}
           />
         </Space>
       </Card>

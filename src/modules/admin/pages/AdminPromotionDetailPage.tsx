@@ -1,4 +1,4 @@
-import { App, Button, Card, DatePicker, Form, Input, InputNumber, Select, Space, Switch, Typography } from 'antd'
+import { App, Button, Card, DatePicker, Descriptions, Form, Input, InputNumber, Select, Space, Switch, Typography } from 'antd'
 import { useQueryClient } from '@tanstack/react-query'
 import dayjs from 'dayjs'
 import { Link, useNavigate, useParams } from 'react-router-dom'
@@ -28,6 +28,7 @@ export default function AdminPromotionDetailPage() {
   if (couponQuery.data && !form.isFieldsTouched()) {
     form.setFieldsValue({
       code: couponQuery.data.code,
+      name: couponQuery.data.name,
       description: couponQuery.data.description,
       discountType: couponQuery.data.discountType,
       discountValue: Number(couponQuery.data.discountValue),
@@ -68,6 +69,35 @@ export default function AdminPromotionDetailPage() {
         </Typography.Title>
       </Space>
       <Card loading={couponQuery.isLoading}>
+        {!isNew && couponQuery.data ? (
+          <Descriptions
+            bordered
+            column={{ xs: 1, md: 2 }}
+            size="middle"
+            style={{ marginBottom: 24 }}
+            items={[
+              { key: 'name', label: 'Tên khuyến mãi', children: couponQuery.data.name },
+              { key: 'code', label: 'Mã', children: couponQuery.data.code },
+              {
+                key: 'description',
+                label: 'Mô tả',
+                span: 2,
+                children: couponQuery.data.description || 'Chưa có mô tả',
+              },
+              {
+                key: 'condition',
+                label: 'Điều kiện sử dụng',
+                span: 2,
+                children: formatCouponCondition(couponQuery.data),
+              },
+              {
+                key: 'date',
+                label: 'Hạn sử dụng',
+                children: formatCouponDate(couponQuery.data.endDate),
+              },
+            ]}
+          />
+        ) : null}
         <Form
           form={form}
           layout="vertical"
@@ -76,6 +106,9 @@ export default function AdminPromotionDetailPage() {
         >
           <Form.Item name="code" label="Code" rules={[{ required: isNew }]}>
             <Input disabled={!isNew} />
+          </Form.Item>
+          <Form.Item name="name" label="Tên khuyến mãi" rules={[{ required: true }]}>
+            <Input placeholder="VD: Giảm 10K đơn từ 120K" />
           </Form.Item>
           <Form.Item name="description" label="Mô tả">
             <Input.TextArea rows={3} />
@@ -117,6 +150,33 @@ export default function AdminPromotionDetailPage() {
       </Card>
     </Space>
   )
+}
+
+function formatPrice(value: number | string | undefined) {
+  return Number(value ?? 0).toLocaleString('vi-VN') + ' đ'
+}
+
+function formatCouponDate(value?: string) {
+  return value ? dayjs(value).format(DISPLAY_DATE_TIME_FORMAT) : 'Không giới hạn'
+}
+
+function formatCouponCondition(coupon: {
+  minOrderValue?: number | string
+  maxDiscountValue?: number | string
+  usageLimit?: number
+  usedCount: number
+}) {
+  const parts = []
+  if (Number(coupon.minOrderValue ?? 0) > 0) {
+    parts.push(`Đơn từ ${formatPrice(coupon.minOrderValue)}`)
+  }
+  if (Number(coupon.maxDiscountValue ?? 0) > 0) {
+    parts.push(`Giảm tối đa ${formatPrice(coupon.maxDiscountValue)}`)
+  }
+  if (coupon.usageLimit) {
+    parts.push(`Còn ${Math.max(0, coupon.usageLimit - coupon.usedCount).toLocaleString('vi-VN')} lượt`)
+  }
+  return parts.length ? parts.join(' - ') : 'Không giới hạn điều kiện'
 }
 
 function toPayload(values: CouponForm): CouponPayload {
