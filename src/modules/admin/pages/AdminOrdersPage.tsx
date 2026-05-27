@@ -3,6 +3,7 @@ import type { ColumnsType } from 'antd/es/table'
 import { Link, useLocation } from 'react-router-dom'
 import { useState } from 'react'
 import { adminApi, type AdminOrder, type FulfillmentStatus } from '@/modules/admin/api/adminApi'
+import { compareDate, compareNumber, compareText } from '@/modules/admin/utils/tableSort'
 import { getOrderStatusMeta } from '@/modules/order/utils/orderFormat'
 import { useApiQuery } from '@/shared/hooks/useApiQuery'
 
@@ -31,7 +32,7 @@ export default function AdminOrdersPage() {
   )
 
   const columns: ColumnsType<AdminOrder> = [
-    { title: 'Mã đơn', dataIndex: 'orderId', width: 100 },
+    { title: 'Mã đơn', dataIndex: 'orderId', width: 100, sorter: (a, b) => compareNumber(a.orderId, b.orderId) },
     {
       title: 'Khách hàng',
       render: (_, order) => (
@@ -42,6 +43,7 @@ export default function AdminOrdersPage() {
           </Typography.Text>
         </Space>
       ),
+      sorter: (a, b) => compareText(a.customerName || a.customerEmail, b.customerName || b.customerEmail),
     },
     {
       title: 'Trạng thái',
@@ -51,9 +53,10 @@ export default function AdminOrdersPage() {
         return <Tag color={meta.color}>{meta.label}</Tag>
       },
       width: 150,
+      sorter: (a, b) => compareText(getOrderStatusMeta(a.fulfillmentStatus).label, getOrderStatusMeta(b.fulfillmentStatus).label),
     },
-    { title: 'Tổng tiền', dataIndex: 'finalAmount', render: money, width: 140 },
-    { title: 'Cập nhật', dataIndex: 'updatedAt', width: 180 },
+    { title: 'Tổng tiền', dataIndex: 'finalAmount', render: money, width: 140, sorter: (a, b) => compareNumber(a.finalAmount, b.finalAmount) },
+    { title: 'Cập nhật', dataIndex: 'updatedAt', width: 180, sorter: (a, b) => compareDate(a.updatedAt, b.updatedAt) },
     {
       title: '',
       render: (_, order) => (

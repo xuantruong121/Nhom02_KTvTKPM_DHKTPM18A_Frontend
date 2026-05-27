@@ -4,6 +4,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
 import { adminApi, type Supplier, type SupplierPayload } from '@/modules/admin/api/adminApi'
 import { matchesKeyword } from '@/modules/admin/utils/search'
+import { compareText } from '@/modules/admin/utils/tableSort'
 import { useApiMutation, useApiQuery } from '@/shared/hooks/useApiQuery'
 
 export default function AdminSuppliersPage() {
@@ -50,11 +51,11 @@ export default function AdminSuppliersPage() {
   )
 
   const columns: ColumnsType<Supplier> = [
-    { title: 'Tên', dataIndex: 'name' },
-    { title: 'Liên hệ', dataIndex: 'contactPerson' },
-    { title: 'SĐT', dataIndex: 'phoneNumber' },
-    { title: 'Email', dataIndex: 'email' },
-    { title: 'Mã số thuế', dataIndex: 'taxCode' },
+    { title: 'Tên', dataIndex: 'name', sorter: (a, b) => compareText(a.name, b.name) },
+    { title: 'Liên hệ', dataIndex: 'contactPerson', sorter: (a, b) => compareText(a.contactPerson, b.contactPerson) },
+    { title: 'SĐT', dataIndex: 'phoneNumber', sorter: (a, b) => compareText(a.phoneNumber, b.phoneNumber) },
+    { title: 'Email', dataIndex: 'email', sorter: (a, b) => compareText(a.email, b.email) },
+    { title: 'Mã số thuế', dataIndex: 'taxCode', sorter: (a, b) => compareText(a.taxCode, b.taxCode) },
     {
       title: '',
       width: 110,
@@ -89,7 +90,7 @@ export default function AdminSuppliersPage() {
         <Space direction="vertical" size="middle" style={{ width: '100%' }}>
           <Input.Search
             allowClear
-            placeholder="Tim theo ten, lien he, SĐT, email, ma so thue"
+            placeholder="Tìm theo tên, liên hệ, SĐT, email, mã số thuế"
             style={{ maxWidth: 420 }}
             value={keyword}
             onChange={(event) => setKeyword(event.target.value)}

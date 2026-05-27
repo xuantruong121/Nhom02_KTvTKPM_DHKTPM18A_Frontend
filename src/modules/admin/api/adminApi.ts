@@ -78,6 +78,7 @@ export type ReturnRequest = {
   refundAmount?: Money
   reason: string
   notes?: string
+  evidenceImageUrl?: string | null
   createdAt?: string
   items: Array<{
     id: string
@@ -151,14 +152,45 @@ export type AdminReview = {
   bookId: number
   bookTitle: string
   userId: number
+  orderId?: number | null
   reviewerName?: string
   reviewerEmail?: string
   rating: number
   content?: string | null
   editCount: number
   canEdit: boolean
+  handlingStatus?: 'NORMAL' | 'NEEDS_ACTION' | 'IN_PROGRESS' | 'RESOLVED' | string
+  issueType?: string | null
+  adminPublicReply?: string | null
+  adminRepliedAt?: string | null
+  supportAction?: string | null
+  flaggedAt?: string | null
+  handledByUserId?: number | null
+  handledAt?: string | null
   createdAt?: string
   updatedAt?: string
+}
+
+export type ReviewHandlingHistory = {
+  id: number
+  reviewId: number
+  action: string
+  fromStatus?: string | null
+  toStatus?: string | null
+  issueType?: string | null
+  publicReply?: string | null
+  supportAction?: string | null
+  note?: string | null
+  handledByUserId?: number | null
+  createdAt?: string
+}
+
+export type ReviewHandlingPayload = {
+  issueType?: string
+  publicReply?: string
+  supportAction?: string
+  status?: string
+  note?: string
 }
 
 export type Supplier = {
@@ -239,6 +271,7 @@ export type AdminUser = {
   fullName: string
   role: 'ADMIN' | 'STAFF_SELLER' | 'STAFF_WAREHOUSE' | 'CUSTOMER' | 'GUEST'
   enabled: boolean
+  createdAt?: string
 }
 
 export type StaffRole = 'STAFF_SELLER' | 'STAFF_WAREHOUSE'
@@ -395,6 +428,12 @@ export const adminApi = {
   },
   getReviews() {
     return unwrapApi<AdminReview[]>(http.get('/admin/reviews'))
+  },
+  updateReviewHandling(id: number, payload: ReviewHandlingPayload) {
+    return unwrapApi<AdminReview>(http.put(`/admin/reviews/${id}/handling`, payload))
+  },
+  getReviewHandlingHistory(id: number) {
+    return unwrapApi<ReviewHandlingHistory[]>(http.get(`/admin/reviews/${id}/history`))
   },
   deleteReview(id: number) {
     return unwrapApi<void>(http.delete(`/admin/reviews/${id}`))

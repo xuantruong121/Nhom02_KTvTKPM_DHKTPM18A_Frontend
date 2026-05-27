@@ -1,5 +1,5 @@
 import { ArrowLeftOutlined, FileProtectOutlined } from '@ant-design/icons'
-import { Button, Card, Empty, Skeleton, Space, Tag, Timeline, Typography } from 'antd'
+import { Button, Card, Empty, Image, Skeleton, Space, Tag, Timeline, Typography } from 'antd'
 import dayjs from 'dayjs'
 import { Link } from 'react-router-dom'
 import { formatMoney, getReturnStatusMeta } from '@/modules/order/utils/orderFormat'
@@ -15,7 +15,12 @@ const returnReasonLabels: Record<string, string> = {
 
 export function MyReturnsPage() {
   const returnsQuery = useApiQuery(['returns', 'my'], () => returnsApi.getMyReturns())
-  const requests = returnsQuery.data ?? []
+  const requests = [...(returnsQuery.data ?? [])].sort((left, right) => {
+    const rightTime = right.createdAt ? dayjs(right.createdAt).valueOf() : 0
+    const leftTime = left.createdAt ? dayjs(left.createdAt).valueOf() : 0
+    if (rightTime !== leftTime) return rightTime - leftTime
+    return String(right.id).localeCompare(String(left.id), 'vi', { numeric: true })
+  })
 
   return (
     <main className="order-page">
@@ -69,6 +74,24 @@ export function MyReturnsPage() {
                       <span>Lý do</span>
                       <strong>{returnReasonLabels[request.reason] ?? request.reason}</strong>
                     </div>
+                    {request.notes ? (
+                      <div>
+                        <span>Chi tiết</span>
+                        <strong>{request.notes}</strong>
+                      </div>
+                    ) : null}
+                    {request.evidenceImageUrl ? (
+                      <div>
+                        <span>Ảnh minh chứng</span>
+                        <Image
+                          width={72}
+                          height={72}
+                          src={request.evidenceImageUrl}
+                          alt={`Anh minh chung ${request.id}`}
+                          style={{ objectFit: 'cover', borderRadius: 8 }}
+                        />
+                      </div>
+                    ) : null}
                     <div>
                       <span>Hoàn tiền dự kiến</span>
                       <strong>{formatMoney(request.refundAmount)}</strong>

@@ -6,18 +6,20 @@ import type { Dayjs } from 'dayjs'
 import { adminApi, type AdminBook, type BookPayload } from '@/modules/admin/api/adminApi'
 import { invalidateCatalogStockCaches } from '@/modules/admin/utils/invalidateAdminCaches'
 import { matchesKeyword } from '@/modules/admin/utils/search'
+import { compareNumber, compareText } from '@/modules/admin/utils/tableSort'
 import StaffBookModal from '@/modules/staff/components/StaffBookModal'
 import { useApiMutation, useApiQuery } from '@/shared/hooks/useApiQuery'
 
 type AdminBooksPageProps = {
   canDelete?: boolean
+  showSalesStats?: boolean
 }
 
 function money(value: number | string | undefined) {
   return Number(value ?? 0).toLocaleString('vi-VN')
 }
 
-export default function AdminBooksPage({ canDelete = true }: AdminBooksPageProps) {
+export default function AdminBooksPage({ canDelete = true, showSalesStats = true }: AdminBooksPageProps) {
   const { message } = App.useApp()
   const queryClient = useQueryClient()
   const [editingBook, setEditingBook] = useState<AdminBook | null>(null)
@@ -34,11 +36,11 @@ export default function AdminBooksPage({ canDelete = true }: AdminBooksPageProps
   )
   const hasSalesDateFilter = Boolean(salesFilters.from || salesFilters.to)
 
-  const booksQuery = useApiQuery(['admin', 'books'], () => adminApi.getBooks(), {
-    refetchInterval: 5_000,
-  })
-  const bookSalesQuery = useApiQuery(['admin', 'bookSales', salesFilters], () =>
-    adminApi.getBookSales(salesFilters)
+  const booksQuery = useApiQuery(['admin', 'books'], () => adminApi.getBooks())
+  const bookSalesQuery = useApiQuery(
+    ['admin', 'bookSales', salesFilters],
+    () => adminApi.getBookSales(salesFilters),
+    { enabled: showSalesStats }
   )
   const categoriesQuery = useApiQuery(['admin', 'bookCategories'], () => adminApi.getCategories())
 
@@ -76,15 +78,16 @@ export default function AdminBooksPage({ canDelete = true }: AdminBooksPageProps
           book.author,
           book.publisher,
           book.isbn,
+          book.publicationYear,
           book.price,
           book.quantity,
-          salesByBookId.get(book.id)?.quantitySold ?? 0
+          showSalesStats ? salesByBookId.get(book.id)?.quantitySold ?? 0 : undefined
         )
         if (!matchesSearch) return false
-        if (!hasSalesDateFilter) return true
+        if (!showSalesStats || !hasSalesDateFilter) return true
         return (salesByBookId.get(book.id)?.quantitySold ?? 0) > 0
       }),
-    [booksQuery.data, hasSalesDateFilter, keyword, salesByBookId]
+    [booksQuery.data, hasSalesDateFilter, keyword, salesByBookId, showSalesStats]
   )
 
   const columns: ColumnsType<AdminBook> = [
@@ -102,10 +105,19 @@ export default function AdminBooksPage({ canDelete = true }: AdminBooksPageProps
           <Typography.Text type="secondary">{book.author}</Typography.Text>
         </Space>
       ),
+      sorter: (a, b) => compareText(a.title, b.title),
     },
-    { title: 'Giá', dataIndex: 'price', render: money, width: 130 },
-    { title: 'Tồn', dataIndex: 'quantity', width: 90 },
+    { title: 'Giá', dataIndex: 'price', render: money, width: 130, sorter: (a, b) => compareNumber(a.price, b.price) },
+    { title: 'ISBN', dataIndex: 'isbn', width: 150, sorter: (a, b) => compareText(a.isbn, b.isbn) },
     {
+      title: 'Năm XB',
+      dataIndex: 'publicationYear',
+      width: 110,
+      sorter: (a, b) => compareNumber(a.publicationYear, b.publicationYear),
+      render: (value?: number) => value ?? '-',
+    },
+    { title: 'Tồn', dataIndex: 'quantity', width: 90, sorter: (a, b) => compareNumber(a.quantity, b.quantity) },
+    ...(showSalesStats ? [({
       title: 'Bán ra',
       width: 110,
       sorter: (a, b) =>
@@ -121,13 +133,14 @@ export default function AdminBooksPage({ canDelete = true }: AdminBooksPageProps
           </Space>
         )
       },
-    },
+    } satisfies ColumnsType<AdminBook>[number])] : []),
     {
       title: 'Trạng thái',
       render: (_, book) => (
         <Tag color={(book.active ?? book.isActive ?? true) ? 'green' : 'red'}>ACTIVE</Tag>
       ),
       width: 120,
+      sorter: (a, b) => Number(a.active ?? a.isActive ?? true) - Number(b.active ?? b.isActive ?? true),
     },
     {
       title: '',
@@ -182,23 +195,25 @@ export default function AdminBooksPage({ canDelete = true }: AdminBooksPageProps
         <Space direction="vertical" size="middle" style={{ width: '100%' }}>
           <Input.Search
             allowClear
-            placeholder="Tim theo ten sach, tac gia, NXB, ISBN"
-            style={{ maxWidth: 360 }}
+            placeholder="Tìm theo tên sách, tác giả, NXB, ISBN, năm xuất bản"
+            style={{ maxWidth: 460 }}
             value={keyword}
             onChange={(event) => setKeyword(event.target.value)}
           />
-          <DatePicker.RangePicker
-            allowClear
-            format="DD/MM/YYYY"
-            placeholder={['Từ ngày', 'Đến ngày']}
-            value={salesRange}
-            onChange={(range) => setSalesRange(range)}
-          />
+          {showSalesStats ? (
+            <DatePicker.RangePicker
+              allowClear
+              format="DD/MM/YYYY"
+              placeholder={['Từ ngày', 'Đến ngày']}
+              value={salesRange}
+              onChange={(range) => setSalesRange(range)}
+            />
+          ) : null}
           <Table
             rowKey="id"
             columns={columns}
             dataSource={books}
-            loading={booksQuery.isLoading || bookSalesQuery.isLoading}
+            loading={booksQuery.isLoading || (showSalesStats && bookSalesQuery.isLoading)}
           />
         </Space>
       </Card>

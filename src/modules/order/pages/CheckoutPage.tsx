@@ -29,6 +29,7 @@ import {
   Tag,
   Typography,
 } from 'antd'
+import type { FormProps } from 'antd'
 import { useMemo, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
@@ -44,6 +45,7 @@ import {
 } from '@/modules/order/utils/orderFormat'
 import { promotionApi, type ValidatePromotionResponse } from '@/modules/promotion/api/promotionApi'
 import { useApiQuery } from '@/shared/hooks/useApiQuery'
+import { getErrorMessage } from '@/shared/api/http'
 import './CheckoutPage.css'
 
 type CheckoutValues = {
@@ -251,10 +253,15 @@ export function CheckoutPage() {
       await queryClient.invalidateQueries({ queryKey: ['catalog', 'books'] })
       navigate(`/orders/${order.orderId}`)
     } catch (err) {
-      void message.error(err instanceof Error ? err.message : 'Không thể tạo đơn hàng')
+      void message.error(getErrorMessage(err) || 'Không thể tạo đơn hàng')
     } finally {
       setSubmitting(false)
     }
+  }
+
+  const handleFinishFailed: FormProps<CheckoutValues>['onFinishFailed'] = ({ errorFields }) => {
+    const firstError = errorFields[0]?.errors[0]
+    void message.warning(firstError || 'Vui lòng kiểm tra lại thông tin đặt hàng')
   }
 
   if (loading) {
@@ -307,6 +314,8 @@ export function CheckoutPage() {
             agree: true,
           }}
           onFinish={handleFinish}
+          onFinishFailed={handleFinishFailed}
+          scrollToFirstError={{ behavior: 'smooth', block: 'center' }}
         >
           <div className="checkout-grid">
             <div className="checkout-main">
@@ -337,7 +346,6 @@ export function CheckoutPage() {
                     <Form.Item
                       label="Họ và tên người nhận"
                       name="recipientName"
-                      rules={[{ required: true, message: 'Nhập họ tên người nhận' }]}
                     >
                       <Input prefix={<IdcardOutlined />} placeholder="VD: Nguyễn Văn A" />
                     </Form.Item>
@@ -346,7 +354,6 @@ export function CheckoutPage() {
                     <Form.Item
                       label="Số điện thoại"
                       name="customerPhone"
-                      rules={[{ required: true, message: 'Nhập số điện thoại nhận hàng' }]}
                     >
                       <Input placeholder="VD: 0901234567" />
                     </Form.Item>

@@ -9,6 +9,7 @@ import {
   type PurchaseOrderStatus,
 } from '@/modules/admin/api/adminApi'
 import { invalidatePurchaseOrderCaches } from '@/modules/admin/utils/invalidateAdminCaches'
+import { compareNumber } from '@/modules/admin/utils/tableSort'
 import { useApiMutation, useApiQuery } from '@/shared/hooks/useApiQuery'
 
 type POAction = 'submit' | 'approve' | 'return' | 'receive' | 'cancel'
@@ -41,7 +42,7 @@ export default function StaffPurchaseOrderDetailPage() {
     },
     {
       onSuccess: async () => {
-        void message.success('Da cap nhat PO')
+        void message.success('Đã cập nhật PO')
         setActiveAction(null)
         setReason('')
         await invalidatePurchaseOrderCaches(queryClient)
@@ -53,13 +54,14 @@ export default function StaffPurchaseOrderDetailPage() {
   const actions = useMemo(() => (po ? getActions(po.status) : []), [po])
 
   const columns: ColumnsType<POItem> = [
-    { title: 'Book ID', dataIndex: 'bookId', width: 120 },
-    { title: 'So luong', dataIndex: 'quantity', width: 120 },
-    { title: 'Don gia', dataIndex: 'priceAtOrder', render: money, width: 160 },
+    { title: 'Book ID', dataIndex: 'bookId', width: 120, sorter: (a, b) => compareNumber(a.bookId, b.bookId) },
+    { title: 'Số lượng', dataIndex: 'quantity', width: 120, sorter: (a, b) => compareNumber(a.quantity, b.quantity) },
+    { title: 'Đơn giá', dataIndex: 'priceAtOrder', render: money, width: 160, sorter: (a, b) => compareNumber(a.priceAtOrder, b.priceAtOrder) },
     {
-      title: 'Thanh tien',
+      title: 'Thành tiền',
       render: (_, item) => money(Number(item.priceAtOrder) * item.quantity),
       width: 160,
+      sorter: (a, b) => compareNumber(Number(a.priceAtOrder) * a.quantity, Number(b.priceAtOrder) * b.quantity),
     },
   ]
 
@@ -67,7 +69,7 @@ export default function StaffPurchaseOrderDetailPage() {
     <Space direction="vertical" size="large" style={{ width: '100%' }}>
       <Space>
         <Link to="..">
-          <Button>Quay lai</Button>
+          <Button>Quay lại</Button>
         </Link>
         <Typography.Title level={3} style={{ margin: 0 }}>
           PO #{poId}
@@ -76,24 +78,24 @@ export default function StaffPurchaseOrderDetailPage() {
 
       <Card loading={poQuery.isLoading}>
         <Descriptions bordered column={2}>
-          <Descriptions.Item label="Nha cung cap">{po?.supplier?.name ?? '-'}</Descriptions.Item>
-          <Descriptions.Item label="Trang thai">
+          <Descriptions.Item label="Nhà cung cấp">{po?.supplier?.name ?? '-'}</Descriptions.Item>
+          <Descriptions.Item label="Trạng thái">
             <Tag color={po?.status === 'CANCELLED' ? 'red' : 'blue'}>{po?.status}</Tag>
           </Descriptions.Item>
-          <Descriptions.Item label="Tong tien">{money(po?.totalAmount)}</Descriptions.Item>
-          <Descriptions.Item label="Nguoi tao">{po?.createdBy ?? '-'}</Descriptions.Item>
-          <Descriptions.Item label="Nguoi duyet">{po?.approvedBy ?? '-'}</Descriptions.Item>
-          <Descriptions.Item label="Nguoi nhan">{po?.receivedBy ?? '-'}</Descriptions.Item>
-          <Descriptions.Item label="Ghi chu" span={2}>
+          <Descriptions.Item label="Tổng tiền">{money(po?.totalAmount)}</Descriptions.Item>
+          <Descriptions.Item label="Người tạo">{po?.createdBy ?? '-'}</Descriptions.Item>
+          <Descriptions.Item label="Người duyệt">{po?.approvedBy ?? '-'}</Descriptions.Item>
+          <Descriptions.Item label="Người nhận">{po?.receivedBy ?? '-'}</Descriptions.Item>
+          <Descriptions.Item label="Ghi chú" span={2}>
             {po?.note ?? '-'}
           </Descriptions.Item>
-          <Descriptions.Item label="Ly do huy" span={2}>
+          <Descriptions.Item label="Lý do hủy" span={2}>
             {po?.cancelReason ?? '-'}
           </Descriptions.Item>
         </Descriptions>
       </Card>
 
-      <Card title="Thao tac">
+      <Card title="Thao tác">
         <Space wrap>
           {actions.map((action) => (
             <Button
@@ -106,16 +108,16 @@ export default function StaffPurchaseOrderDetailPage() {
               {actionLabels[action]}
             </Button>
           ))}
-          {actions.length === 0 ? <Typography.Text type="secondary">Khong con thao tac kha dung</Typography.Text> : null}
+          {actions.length === 0 ? <Typography.Text type="secondary">Không còn thao tác khả dụng</Typography.Text> : null}
         </Space>
       </Card>
 
-      <Card title="San pham">
+      <Card title="Sản phẩm">
         <Table rowKey="id" columns={columns} dataSource={po?.items ?? []} pagination={false} />
       </Card>
 
       <Modal
-        title="Xac nhan PO"
+        title="Xác nhận PO"
         open={Boolean(activeAction)}
         onCancel={() => setActiveAction(null)}
         onOk={() => actionMutation.mutate()}
@@ -123,9 +125,9 @@ export default function StaffPurchaseOrderDetailPage() {
         style={{ top: 24 }}
       >
         {activeAction === 'return' || activeAction === 'cancel' ? (
-          <Input.TextArea rows={3} placeholder="Ly do" value={reason} onChange={(event) => setReason(event.target.value)} />
+          <Input.TextArea rows={3} placeholder="Lý do" value={reason} onChange={(event) => setReason(event.target.value)} />
         ) : (
-          <Typography.Text>Xac nhan thao tac {activeAction ? actionLabels[activeAction] : ''}</Typography.Text>
+          <Typography.Text>Xác nhận thao tác {activeAction ? actionLabels[activeAction] : ''}</Typography.Text>
         )}
       </Modal>
     </Space>
@@ -133,11 +135,11 @@ export default function StaffPurchaseOrderDetailPage() {
 }
 
 const actionLabels: Record<POAction, string> = {
-  submit: 'Gui duyet',
-  approve: 'Duyet',
-  return: 'Tra ve',
-  receive: 'Nhan hang',
-  cancel: 'Huy',
+  submit: 'Gửi duyệt',
+  approve: 'Duyệt',
+  return: 'Trả về',
+  receive: 'Nhận hàng',
+  cancel: 'Hủy',
 }
 
 function getActions(status: PurchaseOrderStatus): POAction[] {

@@ -24,6 +24,7 @@ import {
   type FlashSale,
   type FlashSalePayload,
 } from '@/modules/admin/api/adminApi'
+import { compareNumber, compareText } from '@/modules/admin/utils/tableSort'
 import { useApiMutation, useApiQuery } from '@/shared/hooks/useApiQuery'
 
 type FlashSaleBookForm = {
@@ -295,16 +296,18 @@ export default function AdminFlashSalesPage() {
           </div>
         </Space>
       ),
+      sorter: (a, b) => compareText(a.title, b.title),
     },
-    { title: 'SL sale', dataIndex: 'saleQuantity', width: 100 },
+    { title: 'SL sale', dataIndex: 'saleQuantity', width: 100, sorter: (a, b) => compareNumber(a.saleQuantity, b.saleQuantity) },
     {
       title: 'Giảm',
       dataIndex: 'discountPercent',
       width: 90,
       render: (value: number) => <Tag color="red">-{value}%</Tag>,
+      sorter: (a, b) => compareNumber(a.discountPercent, b.discountPercent),
     },
-    { title: 'Giá gốc', dataIndex: 'price', width: 130, render: money },
-    { title: 'Giá sale', dataIndex: 'salePrice', width: 130, render: money },
+    { title: 'Giá gốc', dataIndex: 'price', width: 130, render: money, sorter: (a, b) => compareNumber(a.price, b.price) },
+    { title: 'Giá sale', dataIndex: 'salePrice', width: 130, render: money, sorter: (a, b) => compareNumber(a.salePrice, b.salePrice) },
     {
       title: '',
       width: 130,

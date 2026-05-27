@@ -165,6 +165,7 @@ export function OrderDetailPage() {
         reason: values.reason === 'OTHER' ? 'NO_LONGER_NEEDED' : values.reason,
         notes,
         items: selectedItems,
+        evidenceImage: files[0]?.originFileObj,
       })
       void message.success('Đã gửi yêu cầu trả hàng')
       setReturnOpen(false)
@@ -363,15 +364,14 @@ export function OrderDetailPage() {
           <Form.Item label="Ảnh minh chứng">
             <Upload
               listType="picture"
+              accept="image/png,image/jpeg,image/webp"
               fileList={files}
+              maxCount={1}
               beforeUpload={() => false}
               onChange={({ fileList }) => setFiles(fileList)}
             >
               <Button>Chọn ảnh</Button>
             </Upload>
-            <Typography.Text type="secondary">
-              Backend hiện chưa nhận ảnh trong API trả hàng, ảnh chỉ được chọn để chuẩn bị UI.
-            </Typography.Text>
           </Form.Item>
         </Form>
       </Modal>

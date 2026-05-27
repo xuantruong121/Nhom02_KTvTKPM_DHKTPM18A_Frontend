@@ -24,6 +24,7 @@ import {
 } from '@/modules/admin/api/adminApi'
 import { invalidatePurchaseOrderCaches } from '@/modules/admin/utils/invalidateAdminCaches'
 import { matchesKeyword } from '@/modules/admin/utils/search'
+import { compareNumber, compareText } from '@/modules/admin/utils/tableSort'
 import { useApiMutation, useApiQuery } from '@/shared/hooks/useApiQuery'
 
 type POAction = 'submit' | 'approve' | 'return' | 'receive' | 'cancel'
@@ -105,8 +106,9 @@ export default function StaffPurchaseOrdersPage() {
       dataIndex: 'id',
       render: (id: number) => <Link to={`${id}`}>#{id}</Link>,
       width: 100,
+      sorter: (a, b) => compareNumber(a.id, b.id),
     },
-    { title: 'Nhà cung cấp', render: (_, po) => po.supplier?.name ?? '-', width: 220 },
+    { title: 'Nhà cung cấp', render: (_, po) => po.supplier?.name ?? '-', width: 220, sorter: (a, b) => compareText(a.supplier?.name, b.supplier?.name) },
     {
       title: 'Trạng thái',
       dataIndex: 'status',
@@ -114,15 +116,22 @@ export default function StaffPurchaseOrdersPage() {
         <Tag color={value === 'CANCELLED' ? 'red' : 'blue'}>{value}</Tag>
       ),
       width: 140,
+      sorter: (a, b) => compareText(a.status, b.status),
     },
     {
       title: 'Tổng tiền',
       dataIndex: 'totalAmount',
       render: (value: string | number) => Number(value).toLocaleString('vi-VN'),
+      sorter: (a, b) => compareNumber(a.totalAmount, b.totalAmount),
     },
     {
       title: 'Sách',
       render: (_, po) => po.items.map((item) => getBookLabel(item.bookId, bookOptions)).join(', '),
+      sorter: (a, b) =>
+        compareText(
+          a.items.map((item) => getBookLabel(item.bookId, bookOptions)).join(', '),
+          b.items.map((item) => getBookLabel(item.bookId, bookOptions)).join(', ')
+        ),
     },
     {
       title: 'Thao tác',
@@ -135,7 +144,7 @@ export default function StaffPurchaseOrdersPage() {
           ))}
           <Link to={`${po.id}`}>
             <Button size="small" type="link">
-              Chi tiet
+              Chi tiết
             </Button>
           </Link>
         </Space>
@@ -158,7 +167,7 @@ export default function StaffPurchaseOrdersPage() {
         <Space direction="vertical" size="middle" style={{ width: '100%' }}>
           <Input.Search
             allowClear
-            placeholder="Tim theo ma PO, nha cung cap, trang thai, sach"
+            placeholder="Tìm theo mã PO, nhà cung cấp, trạng thái, sách"
             style={{ maxWidth: 420 }}
             value={keyword}
             onChange={(event) => setKeyword(event.target.value)}

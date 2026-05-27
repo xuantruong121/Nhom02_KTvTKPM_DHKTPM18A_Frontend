@@ -45,12 +45,21 @@ export type BookReview = {
   bookId: number
   bookTitle: string
   userId: number
+  orderId?: number | null
   reviewerName?: string
   reviewerEmail?: string
   rating: number
   content?: string | null
   editCount: number
   canEdit: boolean
+  handlingStatus?: string
+  issueType?: string | null
+  adminPublicReply?: string | null
+  adminRepliedAt?: string | null
+  supportAction?: string | null
+  flaggedAt?: string | null
+  handledByUserId?: number | null
+  handledAt?: string | null
   createdAt?: string
   updatedAt?: string
 }

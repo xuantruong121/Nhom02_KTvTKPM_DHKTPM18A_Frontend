@@ -192,6 +192,22 @@
   font-size: 13px;
 }
 
+.book-admin-reply {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  margin-top: 4px;
+  background: #f0f7ff;
+  border-left: 3px solid #1677ff;
+  border-radius: 6px;
+}
+
+.book-admin-reply .ant-tag {
+  width: fit-content;
+  margin: 0;
+}
+
 @media (max-width: 900px) {
   .book-main-grid,
   .book-review-summary {

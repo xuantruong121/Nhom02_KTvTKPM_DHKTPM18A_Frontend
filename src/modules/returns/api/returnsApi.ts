@@ -18,6 +18,7 @@ export type CreateReturnRequest = {
   reason: ReturnReason
   notes?: string
   items: CreateReturnItem[]
+  evidenceImage?: File
 }
 
 export type ReturnItem = {
@@ -45,6 +46,7 @@ export type ReturnRequest = {
   refundAmount?: number | string | null
   reason: string
   notes?: string | null
+  evidenceImageUrl?: string | null
   createdAt?: string | null
   items: ReturnItem[]
   histories?: ReturnHistory[]
@@ -52,6 +54,16 @@ export type ReturnRequest = {
 
 export const returnsApi = {
   create(payload: CreateReturnRequest) {
+    if (payload.evidenceImage) {
+      const { evidenceImage, ...requestPayload } = payload
+      const form = new FormData()
+      form.append(
+        'payload',
+        new Blob([JSON.stringify(requestPayload)], { type: 'application/json' })
+      )
+      form.append('evidenceImage', evidenceImage)
+      return unwrapApi<ReturnRequest>(http.post('/returns', form))
+    }
     return unwrapApi<ReturnRequest>(http.post('/returns', payload))
   },
   getMyReturns() {

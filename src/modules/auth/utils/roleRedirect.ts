@@ -17,3 +17,11 @@ export function homePathForRole(role: UserRole): string {
 export function isStaff(role: UserRole): boolean {
   return role === 'STAFF_SELLER' || role === 'STAFF_WAREHOUSE'
 }
+
+export function isPathAllowedForRoles(path: string | undefined, roles: UserRole[]): boolean {
+  if (!path) return false
+  if (roles.includes('ADMIN')) return path === '/admin' || path.startsWith('/admin/')
+  if (roles.some(isStaff)) return path === '/staff' || path.startsWith('/staff/')
+  if (roles.includes('CUSTOMER')) return !path.startsWith('/admin') && !path.startsWith('/staff')
+  return false
+}

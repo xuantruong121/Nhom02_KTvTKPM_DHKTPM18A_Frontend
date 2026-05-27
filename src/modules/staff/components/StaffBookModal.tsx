@@ -16,6 +16,17 @@ type BookForm = Omit<BookPayload, 'image'> & {
   image?: UploadFile[]
 }
 
+const LANGUAGE_OPTIONS = [
+  { value: 'Tiếng Việt', label: 'Tiếng Việt' },
+  { value: 'Tiếng Anh', label: 'Tiếng Anh' },
+  { value: 'Tiếng Trung', label: 'Tiếng Trung' },
+  { value: 'Tiếng Nhật', label: 'Tiếng Nhật' },
+  { value: 'Tiếng Hàn', label: 'Tiếng Hàn' },
+  { value: 'Tiếng Pháp', label: 'Tiếng Pháp' },
+  { value: 'Tiếng Đức', label: 'Tiếng Đức' },
+  { value: 'Song ngữ', label: 'Song ngữ' },
+]
+
 export default function StaffBookModal({ open, book, categories, loading, onCancel, onSubmit }: Props) {
   const [form] = Form.useForm<BookForm>()
 
@@ -85,11 +96,7 @@ export default function StaffBookModal({ open, book, categories, loading, onCanc
           valuePropName="fileList"
           getValueFromEvent={(event: { fileList?: UploadFile[] }) => event.fileList ?? []}
         >
-          <Upload
-            beforeUpload={() => false}
-            maxCount={1}
-            listType="picture"
-          >
+          <Upload beforeUpload={() => false} maxCount={1} listType="picture">
             <Input readOnly value="Chọn ảnh" />
           </Upload>
         </Form.Item>
@@ -103,7 +110,13 @@ export default function StaffBookModal({ open, book, categories, loading, onCanc
           <InputNumber min={0} style={{ width: '100%' }} />
         </Form.Item>
         <Form.Item name="language" label="Ngôn ngữ">
-          <Input />
+          <Select
+            allowClear
+            showSearch
+            placeholder="Chọn ngôn ngữ"
+            optionFilterProp="label"
+            options={LANGUAGE_OPTIONS}
+          />
         </Form.Item>
         <Form.Item name="pageCount" label="Số trang">
           <InputNumber min={0} style={{ width: '100%' }} />

@@ -34,13 +34,13 @@ import {
 import type { MenuProps } from 'antd'
 import { useQueryClient } from '@tanstack/react-query'
 import dayjs from 'dayjs'
-import { memo, useCallback, useEffect, useMemo, useState, type MouseEvent } from 'react'
-import { Link, Outlet, useNavigate } from 'react-router-dom'
+import { memo, useCallback, useMemo, useState, type MouseEvent } from 'react'
+import { Link, Navigate, Outlet, useNavigate } from 'react-router-dom'
 import { cartApi } from '@/modules/cart/api/cartApi'
 import { catalogApi } from '@/modules/catalog/api/catalogApi'
 import { notificationApi } from '@/modules/notification/api/notificationApi'
 import { newsletterApi } from '@/modules/notification/api/newsletterApi'
-import { env } from '@/shared/config/env'
+import { homePathForRole } from '@/modules/auth/utils/roleRedirect'
 import { useApiMutation, useApiQuery } from '@/shared/hooks/useApiQuery'
 import { useAuthStore, useAuthUser } from '@/shared/store/authStore'
 import './PublicLayout.css'
@@ -50,7 +50,6 @@ const { Header, Content, Footer } = Layout
 function PublicLayoutImpl() {
   const { message } = App.useApp()
   const user = useAuthUser()
-  const accessToken = useAuthStore((s) => s.accessToken)
   const logout = useAuthStore((s) => s.logout)
   const navigate = useNavigate()
   const queryClient = useQueryClient()
@@ -63,7 +62,6 @@ function PublicLayoutImpl() {
     () => notificationApi.getMyNotifications(),
     {
       enabled: Boolean(user),
-      refetchInterval: 30_000,
     }
   )
   const markAllNotificationsRead = useApiMutation(() => notificationApi.markAllAsRead(), {
@@ -115,25 +113,6 @@ function PublicLayoutImpl() {
     },
     [navigate]
   )
-
-  useEffect(() => {
-    if (!user || !accessToken) {
-      return undefined
-    }
-
-    const streamUrl = `${env.apiBaseUrl}/notifications/stream?token=${encodeURIComponent(accessToken)}`
-    const eventSource = new EventSource(streamUrl)
-
-    eventSource.addEventListener('notification', () => {
-      void queryClient.invalidateQueries({ queryKey: ['notifications'] })
-    })
-
-    eventSource.onerror = () => {
-      eventSource.close()
-    }
-
-    return () => eventSource.close()
-  }, [accessToken, queryClient, user])
 
   const [searchValue, setSearchValue] = useState('')
   const booksQuery = useApiQuery(['catalog', 'books'], () => catalogApi.getBooks())
@@ -263,6 +242,10 @@ function PublicLayoutImpl() {
       )}
     </div>
   )
+
+  if (user && user.role !== 'CUSTOMER') {
+    return <Navigate to={homePathForRole(user.role)} replace />
+  }
 
   return (
     <Layout className="public-layout">

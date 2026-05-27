@@ -5,6 +5,7 @@ import { useMemo, useState } from 'react'
 import { adminApi, type InventoryStock } from '@/modules/admin/api/adminApi'
 import { invalidateCatalogStockCaches } from '@/modules/admin/utils/invalidateAdminCaches'
 import { matchesKeyword } from '@/modules/admin/utils/search'
+import { compareDate, compareNumber, compareText } from '@/modules/admin/utils/tableSort'
 import { useApiMutation, useApiQuery } from '@/shared/hooks/useApiQuery'
 
 type StockAction = {
@@ -18,12 +19,8 @@ export default function AdminImportStocksPage() {
   const queryClient = useQueryClient()
   const [amounts, setAmounts] = useState<Record<number, number>>({})
   const [keyword, setKeyword] = useState('')
-  const inventoryQuery = useApiQuery(['admin', 'inventory'], () => adminApi.getInventory(), {
-    refetchInterval: 5_000,
-  })
-  const booksQuery = useApiQuery(['admin', 'books'], () => adminApi.getBooks(), {
-    refetchInterval: 5_000,
-  })
+  const inventoryQuery = useApiQuery(['admin', 'inventory'], () => adminApi.getInventory())
+  const booksQuery = useApiQuery(['admin', 'books'], () => adminApi.getBooks())
 
   const bookById = useMemo(
     () => new Map((booksQuery.data ?? []).map((book) => [book.id, book])),
@@ -71,16 +68,21 @@ export default function AdminImportStocksPage() {
   )
 
   const columns: ColumnsType<InventoryStock> = [
-    { title: 'Book ID', dataIndex: 'bookId', width: 100 },
+    { title: 'Book ID', dataIndex: 'bookId', width: 100, sorter: (a, b) => compareNumber(a.bookId, b.bookId) },
     {
       title: 'Sách',
       render: (_, stock) => {
         const book = bookById.get(stock.bookId)
         return book ? `${book.title} - ${book.author}` : `Book #${stock.bookId}`
       },
+      sorter: (a, b) =>
+        compareText(
+          bookById.get(a.bookId) ? `${bookById.get(a.bookId)?.title} ${bookById.get(a.bookId)?.author}` : a.bookId,
+          bookById.get(b.bookId) ? `${bookById.get(b.bookId)?.title} ${bookById.get(b.bookId)?.author}` : b.bookId
+        ),
     },
-    { title: 'Số lượng', dataIndex: 'quantity', width: 120 },
-    { title: 'Cập nhật', dataIndex: 'updatedAt', width: 180 },
+    { title: 'Số lượng', dataIndex: 'quantity', width: 120, sorter: (a, b) => compareNumber(a.quantity, b.quantity) },
+    { title: 'Cập nhật', dataIndex: 'updatedAt', width: 180, sorter: (a, b) => compareDate(a.updatedAt, b.updatedAt) },
     {
       title: 'Điều chỉnh thủ công',
       render: (_, stock) => {
@@ -124,7 +126,7 @@ export default function AdminImportStocksPage() {
         <Space direction="vertical" size="middle" style={{ width: '100%' }}>
           <Input.Search
             allowClear
-            placeholder="Tim theo sach, tac gia, ISBN, Book ID"
+            placeholder="Tìm theo sách, tác giả, ISBN, Book ID"
             style={{ maxWidth: 360 }}
             value={keyword}
             onChange={(event) => setKeyword(event.target.value)}

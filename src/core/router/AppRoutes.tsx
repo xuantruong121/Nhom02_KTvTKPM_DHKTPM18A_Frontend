@@ -17,7 +17,6 @@ import AdminReviewsPage from '@/modules/admin/pages/AdminReviewsPage'
 import AdminSuppliersPage from '@/modules/admin/pages/AdminSuppliersPage'
 import AdminSystemCatalogPage from '@/modules/admin/pages/AdminSystemCatalogPage'
 import AdminUsersPage from '@/modules/admin/pages/AdminUsersPage'
-import AdminLoginPage from '@/modules/auth/pages/AdminLoginPage'
 import LoginPage from '@/modules/auth/pages/LoginPage'
 import RegisterPage from '@/modules/auth/pages/RegisterPage'
 import ForgotPasswordPage from '@/modules/auth/pages/ForgotPasswordPage'
@@ -50,8 +49,11 @@ export default function AppRoutes() {
   return (
     <Routes>
       {/* ─── Auth (public) ─────────────────────────────────────── */}
-      <Route path="/auth/admin-login" element={<AdminLoginPage />} />
-      <Route path="/auth/login" element={<LoginPage />} />
+      <Route path="/auth/admin-login" element={<Navigate to="/admin/login" replace />} />
+      <Route
+        path="/auth/login"
+        element={<LoginPage allowedRoles={['CUSTOMER']} defaultRedirect="/" />}
+      />
       <Route
         path="/admin/login"
         element={
@@ -152,7 +154,7 @@ export default function AppRoutes() {
       <Route
         path="/admin"
         element={
-          <RoleRoute allowed={['ADMIN']} loginPath="/auth/admin-login">
+          <RoleRoute allowed={['ADMIN']} loginPath="/admin/login">
             <AdminLayout />
           </RoleRoute>
         }
@@ -224,7 +226,7 @@ export default function AppRoutes() {
           path="books"
           element={
             <RoleRoute allowed={['STAFF_WAREHOUSE']} loginPath="/staff/login">
-              <AdminBooksPage canDelete={false} />
+              <AdminBooksPage canDelete={false} showSalesStats={false} />
             </RoleRoute>
           }
         />
