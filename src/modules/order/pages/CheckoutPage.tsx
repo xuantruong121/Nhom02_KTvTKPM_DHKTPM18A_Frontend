@@ -1,4 +1,4 @@
-import {
+﻿import {
   BankOutlined,
   CheckCircleOutlined,
   ClockCircleOutlined,
@@ -23,6 +23,7 @@ import {
   Modal,
   Radio,
   Row,
+  Select,
   Skeleton,
   Space,
   Tag,
@@ -98,6 +99,9 @@ export function CheckoutPage() {
 
   const cartQuery = useApiQuery(['cart'], () => cartApi.getCart())
   const profileQuery = useApiQuery(['account', 'profile'], () => accountApi.getProfile())
+  const addressUnitsQuery = useApiQuery(['account', 'addressUnits'], () =>
+    accountApi.getAddressUnits()
+  )
   const booksQuery = useApiQuery(['catalog', 'books', 'checkout'], () => catalogApi.getBooks())
 
   const selectedBookIds = useMemo(() => {
@@ -122,8 +126,12 @@ export function CheckoutPage() {
   const addresses = profileQuery.data?.addresses ?? []
   const defaultAddress = addresses.find((address) => address.isDefault) ?? addresses[0]
   const selectedAddressId = Form.useWatch('addressId', form)
+  const selectedCity = Form.useWatch('city', form)
   const selectedSavedAddress =
     addresses.find((address) => address.id === selectedAddressId) ?? defaultAddress
+  const addressUnits = addressUnitsQuery.data ?? []
+  const selectedProvince = addressUnits.find((province) => province.name === selectedCity)
+  const wardOptions = selectedProvince?.wards ?? []
   const subtotal = useMemo(
     () => items.reduce((sum, item) => sum + toNumber(item.price) * item.quantity, 0),
     [items]
@@ -132,7 +140,11 @@ export function CheckoutPage() {
   const watchedShippingMethod = Form.useWatch('shippingMethod', form) ?? 'STANDARD'
   const shippingFee = shippingOptions[watchedShippingMethod].fee
   const finalAmount = Math.max(0, subtotal - discount + shippingFee)
-  const loading = cartQuery.isLoading || profileQuery.isLoading || booksQuery.isLoading
+  const loading =
+    cartQuery.isLoading ||
+    profileQuery.isLoading ||
+    addressUnitsQuery.isLoading ||
+    booksQuery.isLoading
 
   const handleValidateCoupon = async () => {
     const code = couponCode.trim()
@@ -392,20 +404,44 @@ export function CheckoutPage() {
                         <Row gutter={12}>
                           <Col xs={24} md={8}>
                             <Form.Item
-                              label="Phường / Xã"
-                              name="ward"
-                              rules={[{ required: true, message: 'Nhập phường/xã' }]}
+                              label="Tỉnh / Thành phố"
+                              name="city"
+                              rules={[{ required: true, message: 'Chọn tỉnh/thành phố' }]}
                             >
-                              <Input placeholder="VD: Phường 4" />
+                              <Select
+                                showSearch
+                                optionFilterProp="label"
+                                placeholder="Chọn tỉnh/thành phố"
+                                options={addressUnits.map((province) => ({
+                                  value: province.name,
+                                  label: province.name,
+                                }))}
+                                onChange={(city) => {
+                                  form.setFieldsValue({ city, ward: undefined })
+                                }}
+                              />
                             </Form.Item>
                           </Col>
                           <Col xs={24} md={8}>
                             <Form.Item
-                              label="Tỉnh / Thành phố"
-                              name="city"
-                              rules={[{ required: true, message: 'Nhập tỉnh/thành phố' }]}
+                              label="Phường / Xã"
+                              name="ward"
+                              rules={[{ required: true, message: 'Chọn phường/xã' }]}
                             >
-                              <Input placeholder="VD: TP. Hồ Chí Minh" />
+                              <Select
+                                showSearch
+                                disabled={!selectedProvince}
+                                optionFilterProp="label"
+                                placeholder={
+                                  selectedProvince
+                                    ? 'Chọn phường/xã'
+                                    : 'Chọn tỉnh/thành phố trước'
+                                }
+                                options={wardOptions.map((ward) => ({
+                                  value: ward.name,
+                                  label: ward.name,
+                                }))}
+                              />
                             </Form.Item>
                           </Col>
                         </Row>

@@ -53,6 +53,9 @@ export const homeApi = {
   getRankingBooks(type = 'BEST_SELLER', params?: HomeDiscoveryParams) {
     return unwrapApi<HomeBook[]>(http.get('/home/rankings', { params: { ...params, type } }))
   },
+  getRecommendations(params?: HomeDiscoveryParams) {
+    return unwrapApi<HomeBook[]>(http.get('/home/recommendations', { params }))
+  },
   getActiveFlashSale() {
     return unwrapApi<HomeFlashSale>(http.get('/flash-sales/active'))
   },

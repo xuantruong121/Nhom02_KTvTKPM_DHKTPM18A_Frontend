@@ -44,6 +44,7 @@ import AddressPage from '@/modules/account/pages/AddressPage'
 import AiAssistantPage from '@/modules/ai/pages/AiAssistantPage'
 import AdminAiPage from '@/modules/admin/pages/AdminAiPage'
 import { HomeCollectionPage } from '@/modules/home/pages/HomeCollectionPage'
+import ActivePromotionsPage from '@/modules/promotion/pages/ActivePromotionsPage'
 
 export default function AppRoutes() {
   return (
@@ -88,6 +89,7 @@ export default function AppRoutes() {
         <Route path="/collections/trends" element={<HomeCollectionPage type="trends" />} />
         <Route path="/collections/rankings" element={<HomeCollectionPage type="rankings" />} />
         <Route path="/collections/flash-sale" element={<HomeCollectionPage type="flash-sale" />} />
+        <Route path="/promotions" element={<ActivePromotionsPage />} />
         <Route path="/ai" element={<AiAssistantPage />} />
         <Route
           path="/cart"
