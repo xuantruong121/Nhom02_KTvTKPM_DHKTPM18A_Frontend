@@ -18,7 +18,6 @@ import {
   Col,
   Empty,
   Flex,
-  Image,
   Modal,
   Progress,
   Row,
@@ -35,6 +34,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { cartApi } from '@/modules/cart/api/cartApi'
 import { catalogApi, type Book } from '@/modules/catalog/api/catalogApi'
+import { BookCoverImage } from '@/modules/catalog/components/BookCoverImage'
 import { homeApi, type HomeBook } from '@/modules/home/api/homeApi'
 import { useApiMutation, useApiQuery } from '@/shared/hooks/useApiQuery'
 import { useIsAuthenticated } from '@/shared/store/authStore'
@@ -61,6 +61,7 @@ const featuredCategories = [
 ]
 
 const HOME_CATEGORY_PREVIEW_LIMIT = 5
+const FEATURED_CATEGORY_LIMIT = 6
 
 function getRemainingTime(targetAt?: string | null) {
   if (!targetAt) return { total: 0, hours: '00', minutes: '00', seconds: '00' }
@@ -142,11 +143,7 @@ function ProductCard({
     <Card hoverable className={compact ? 'home-product-card compact' : 'home-product-card'}>
       <Link to={`/books/${book.id}`} className="home-product-link">
         <div className="home-product-cover">
-          {book.imageUrl ? (
-            <Image src={book.imageUrl} alt={book.title} preview={false} />
-          ) : (
-            <BookOutlined />
-          )}
+          <BookCoverImage src={book.imageUrl} isbn={book.isbn} alt={book.title} />
         </div>
         <Typography.Text strong className="home-product-title">
           {book.title}
@@ -250,6 +247,9 @@ export function HomePage() {
   const booksQuery = useApiQuery(['catalog', 'books'], () => catalogApi.getBooks())
   const discoveryQuery = useApiQuery(['home', 'discovery'], () =>
     homeApi.getDiscovery({ limit: 8 })
+  )
+  const categorySalesQuery = useApiQuery(['home', 'rankings', 'sales', 'featured-categories'], () =>
+    homeApi.getRankingBooks('SALES_RANKING', { limit: 100 })
   )
   const recommendationsQuery = useApiQuery(['home', 'recommendations'], () =>
     homeApi.getRecommendations({ limit: 8 })
@@ -362,6 +362,8 @@ export function HomePage() {
     originalPrice: item.price,
     quantity: item.saleQuantity,
   }))
+  const shouldShowFlashSaleSection =
+    activeFlashSaleQuery.isLoading || configuredFlashSaleProducts.length > 0
   const flashSaleCountdownLabel =
     activeFlashSaleQuery.data?.startAt && dayjs().isBefore(dayjs(activeFlashSaleQuery.data.startAt))
       ? 'Bắt đầu sau'
@@ -374,17 +376,38 @@ export function HomePage() {
   ]
   const homeCategoryItems = categories.length ? categories : [{ id: 0, name: 'Sách Trong Nước' }]
   const previewCategories = homeCategoryItems.slice(0, HOME_CATEGORY_PREVIEW_LIMIT)
+  const categorySalesById = useMemo(() => {
+    return (categorySalesQuery.data ?? []).reduce((map, book) => {
+      const categoryIds = book.categoryIds?.length ? book.categoryIds : [0]
+      const quantitySold = toNumber(book.quantitySold)
+
+      categoryIds.forEach((categoryId) => {
+        map.set(categoryId, (map.get(categoryId) ?? 0) + quantitySold)
+      })
+
+      return map
+    }, new Map<number, number>())
+  }, [categorySalesQuery.data])
   const featuredCategoryItems = categories.length
-    ? categories.slice(0, 12).map((category) => ({
-        id: category.id,
-        label: category.name,
-        to: `/books?categoryId=${category.id}`,
-      }))
-    : featuredCategories.map((category) => ({
-        id: category,
-        label: category,
-        to: '/books',
-      }))
+    ? [...categories]
+        .sort((left, right) => {
+          const soldDiff =
+            (categorySalesById.get(right.id) ?? 0) - (categorySalesById.get(left.id) ?? 0)
+          return soldDiff || left.name.localeCompare(right.name, 'vi')
+        })
+        .slice(0, FEATURED_CATEGORY_LIMIT)
+        .map((category) => ({
+          id: category.id,
+          label: category.name,
+          to: `/books?categoryId=${category.id}`,
+        }))
+    : featuredCategories
+        .map((category) => ({
+          id: category,
+          label: category,
+          to: '/books',
+        }))
+        .slice(0, FEATURED_CATEGORY_LIMIT)
   const trendTabs = [
     { key: 'daily', label: 'Xu Hướng Theo Ngày', books: trendingBooks },
     { key: 'hot', label: 'Sách Hot', books: hotBooks },
@@ -464,59 +487,61 @@ export function HomePage() {
         </Card>
       </section>
 
-      <section className="home-shell" id="flash-sale">
-        <Card className="home-section-card">
-          <SectionHeader
-            icon={<FireOutlined />}
-            title="Flash Sale"
-            action="Xem tất cả"
-            onAction={() => navigate('/collections/flash-sale')}
-          />
-          <div className="home-countdown">
-            <span>{flashSaleCountdownLabel}</span>
-            <b>{flashSaleRemaining.hours}</b>:<b>{flashSaleRemaining.minutes}</b>:
-            <b>{flashSaleRemaining.seconds}</b>
-          </div>
-          {loading || activeFlashSaleQuery.isLoading ? (
-            <Skeleton active paragraph={{ rows: 4 }} />
-          ) : configuredFlashSaleProducts.length ? (
-            <Row gutter={[16, 16]}>
-              {configuredFlashSaleProducts.map((book, index) => {
-                const bookSaleNotStarted = Boolean(
-                  book.startAt && dayjs().isBefore(dayjs(book.startAt))
-                )
+      {shouldShowFlashSaleSection ? (
+        <section className="home-shell" id="flash-sale">
+          <Card className="home-section-card">
+            <SectionHeader
+              icon={<FireOutlined />}
+              title="Flash Sale"
+              action="Xem tất cả"
+              onAction={() => navigate('/collections/flash-sale')}
+            />
+            <div className="home-countdown">
+              <span>{flashSaleCountdownLabel}</span>
+              <b>{flashSaleRemaining.hours}</b>:<b>{flashSaleRemaining.minutes}</b>:
+              <b>{flashSaleRemaining.seconds}</b>
+            </div>
+            {activeFlashSaleQuery.isLoading ? (
+              <Skeleton active paragraph={{ rows: 4 }} />
+            ) : configuredFlashSaleProducts.length ? (
+              <Row gutter={[16, 16]}>
+                {configuredFlashSaleProducts.map((book, index) => {
+                  const bookSaleNotStarted = Boolean(
+                    book.startAt && dayjs().isBefore(dayjs(book.startAt))
+                  )
 
-                return (
-                  <Col xs={12} sm={8} md={6} lg={4} key={book.id}>
-                    <ProductCard
-                      book={book}
-                      action={
-                        <Button
-                          block
-                          type="primary"
-                          loading={flashSaleBuyMutation.isPending}
-                          disabled={bookSaleNotStarted || toNumber(book.quantity) <= 0}
-                          onClick={() => void handleFlashSaleBuyNow(book.id)}
-                        >
-                          {bookSaleNotStarted ? 'Sắp diễn ra' : 'Mua ngay'}
-                        </Button>
-                      }
-                    />
-                    <Progress
-                      percent={Math.min(100, 35 + index * 12)}
-                      showInfo={false}
-                      strokeColor="#c92127"
-                      className="home-sale-progress"
-                    />
-                  </Col>
-                )
-              })}
-            </Row>
-          ) : (
-            <Empty description="Chưa có Flash Sale được cấu hình" />
-          )}
-        </Card>
-      </section>
+                  return (
+                    <Col xs={12} sm={8} md={6} lg={4} key={book.id}>
+                      <ProductCard
+                        book={book}
+                        action={
+                          <Button
+                            block
+                            type="primary"
+                            loading={flashSaleBuyMutation.isPending}
+                            disabled={bookSaleNotStarted || toNumber(book.quantity) <= 0}
+                            onClick={() => void handleFlashSaleBuyNow(book.id)}
+                          >
+                            {bookSaleNotStarted ? 'Sắp diễn ra' : 'Mua ngay'}
+                          </Button>
+                        }
+                      />
+                      <Progress
+                        percent={Math.min(100, 35 + index * 12)}
+                        showInfo={false}
+                        strokeColor="#c92127"
+                        className="home-sale-progress"
+                      />
+                    </Col>
+                  )
+                })}
+              </Row>
+            ) : (
+              <Empty description="Chưa có Flash Sale được cấu hình" />
+            )}
+          </Card>
+        </section>
+      ) : null}
 
       <section className="home-shell" id="new-books">
         <Card className="home-section-card">
@@ -544,7 +569,12 @@ export function HomePage() {
 
       <section className="home-shell" id="featured-categories">
         <Card className="home-section-card">
-          <SectionHeader icon={<TagsOutlined />} title="Danh Mục Sản Phẩm Nổi Bật" />
+          <SectionHeader
+            icon={<TagsOutlined />}
+            title="Danh Mục Sản Phẩm Nổi Bật"
+            action="Xem thêm"
+            onAction={() => setCategoryModalOpen(true)}
+          />
           <div className="home-tile-grid featured">
             {featuredCategoryItems.map((category) => (
               <TextTile label={category.label} to={category.to} key={category.id} />
@@ -640,7 +670,6 @@ export function HomePage() {
           ))}
         </div>
       </Modal>
-
     </main>
   )
 }

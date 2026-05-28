@@ -6,10 +6,11 @@ import {
   StarFilled,
   TrophyOutlined,
 } from '@ant-design/icons'
-import { Card, Col, Empty, Image, Row, Skeleton, Space, Tabs, Tag, Typography } from 'antd'
+import { Card, Col, Empty, Row, Skeleton, Space, Tabs, Tag, Typography } from 'antd'
 import dayjs from 'dayjs'
 import { Link, useSearchParams } from 'react-router-dom'
 import { catalogApi, type Book } from '@/modules/catalog/api/catalogApi'
+import { BookCoverImage } from '@/modules/catalog/components/BookCoverImage'
 import { homeApi, type HomeBook } from '@/modules/home/api/homeApi'
 import { useApiQuery } from '@/shared/hooks/useApiQuery'
 import './HomeCollectionPage.css'
@@ -54,11 +55,7 @@ function ProductCard({ book }: { book: Book }) {
     <Card hoverable className="home-collection-product">
       <Link to={`/books/${book.id}`}>
         <div className="home-collection-cover">
-          {book.imageUrl ? (
-            <Image src={book.imageUrl} alt={book.title} preview={false} />
-          ) : (
-            <BookOutlined />
-          )}
+          <BookCoverImage src={book.imageUrl} isbn={book.isbn} alt={book.title} />
         </div>
         <Typography.Text strong className="home-collection-title">
           {book.title}

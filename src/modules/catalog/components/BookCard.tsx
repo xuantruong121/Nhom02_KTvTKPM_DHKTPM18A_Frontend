@@ -1,7 +1,8 @@
-import { BookOutlined, ShoppingCartOutlined, StarFilled } from '@ant-design/icons'
-import { Button, Card, Flex, Image, Space, Tag, Typography } from 'antd'
+import { ShoppingCartOutlined, StarFilled } from '@ant-design/icons'
+import { Button, Card, Flex, Space, Tag, Typography } from 'antd'
 import { Link } from 'react-router-dom'
 import type { Book } from '@/modules/catalog/api/catalogApi'
+import { BookCoverImage } from '@/modules/catalog/components/BookCoverImage'
 import { useAddToCart } from '@/modules/cart/hooks/useAddToCart'
 import './BookCard.css'
 
@@ -35,11 +36,7 @@ export function BookCard({ book }: { book: Book }) {
     <Card hoverable className="catalog-book-card">
       <Link to={`/books/${book.id}`} className="catalog-book-link" aria-label={`Xem chi tiết ${book.title}`}>
         <div className="catalog-book-cover">
-          {book.imageUrl ? (
-            <Image src={book.imageUrl} alt={book.title} preview={false} />
-          ) : (
-            <BookOutlined />
-          )}
+          <BookCoverImage src={book.imageUrl} isbn={book.isbn} alt={book.title} />
         </div>
 
         <Typography.Text strong className="catalog-book-title">

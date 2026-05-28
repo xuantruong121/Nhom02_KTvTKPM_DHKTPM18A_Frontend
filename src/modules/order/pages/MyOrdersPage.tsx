@@ -1,11 +1,25 @@
 import { FileTextOutlined, SearchOutlined, ShoppingOutlined } from '@ant-design/icons'
-import { App, Button, Card, Empty, Input, Select, Skeleton, Space, Tag, Typography } from 'antd'
+import {
+  App,
+  Button,
+  Card,
+  Empty,
+  Input,
+  Popconfirm,
+  Select,
+  Skeleton,
+  Space,
+  Tag,
+  Typography,
+} from 'antd'
+import { useQueryClient } from '@tanstack/react-query'
 import dayjs from 'dayjs'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { orderApi } from '@/modules/order/api/orderApi'
 import { formatMoney, getOrderStatusMeta } from '@/modules/order/utils/orderFormat'
-import { useApiQuery } from '@/shared/hooks/useApiQuery'
+import RealtimeEventBridge from '@/modules/realtime/RealtimeEventBridge'
+import { useApiMutation, useApiQuery } from '@/shared/hooks/useApiQuery'
 import './OrderPages.css'
 
 const statusOptions = [
@@ -20,11 +34,23 @@ const statusOptions = [
 
 export function MyOrdersPage() {
   const { message } = App.useApp()
+  const queryClient = useQueryClient()
   const [searchParams] = useSearchParams()
   const [status, setStatus] = useState('ALL')
   const [keyword, setKeyword] = useState('')
   const notifiedPaymentStatus = useRef<string | null>(null)
   const ordersQuery = useApiQuery(['orders', 'my'], () => orderApi.getMyOrders())
+  const confirmReceivedMutation = useApiMutation((orderId: number) => orderApi.confirmReceived(orderId), {
+    onSuccess: async (order) => {
+      void message.success('Đã xác nhận nhận hàng')
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['orders', 'my'] }),
+        queryClient.invalidateQueries({ queryKey: ['orders', order.orderId] }),
+        queryClient.invalidateQueries({ queryKey: ['admin', 'orders'] }),
+        queryClient.invalidateQueries({ queryKey: ['admin', 'orders', order.orderId] }),
+      ])
+    },
+  })
 
   useEffect(() => {
     const paymentStatus = searchParams.get('paymentStatus')
@@ -32,7 +58,9 @@ export function MyOrdersPage() {
     notifiedPaymentStatus.current = paymentStatus
 
     if (paymentStatus === 'cancelled') {
-      void message.warning('Bạn đã hủy thanh toán VNPay. Đơn hàng vẫn nằm trong danh sách để thanh toán lại.')
+      void message.warning(
+        'Bạn đã hủy thanh toán VNPay. Đơn hàng vẫn nằm trong danh sách để thanh toán lại.'
+      )
     } else if (paymentStatus === 'failed') {
       void message.error('Thanh toán VNPay chưa hoàn tất. Bạn có thể mở chi tiết đơn để thử lại.')
     }
@@ -42,12 +70,18 @@ export function MyOrdersPage() {
     const text = keyword.trim().toLowerCase()
     return (ordersQuery.data ?? [])
       .filter((order) => status === 'ALL' || order.fulfillmentStatus === status)
-      .filter((order) => !text || String(order.orderId).includes(text) || order.requestId?.toLowerCase().includes(text))
+      .filter(
+        (order) =>
+          !text ||
+          String(order.orderId).includes(text) ||
+          order.requestId?.toLowerCase().includes(text)
+      )
       .sort((a, b) => dayjs(b.updatedAt).valueOf() - dayjs(a.updatedAt).valueOf())
   }, [keyword, ordersQuery.data, status])
 
   return (
     <main className="order-page">
+      <RealtimeEventBridge />
       <section className="order-shell">
         <div className="order-heading">
           <div>
@@ -97,7 +131,9 @@ export function MyOrdersPage() {
                       <Tag color={meta.color}>{meta.label}</Tag>
                     </Space>
                     <Typography.Text type="secondary">
-                      {order.updatedAt ? dayjs(order.updatedAt).format('DD/MM/YYYY HH:mm') : 'Đang cập nhật'}
+                      {order.updatedAt
+                        ? dayjs(order.updatedAt).format('DD/MM/YYYY HH:mm')
+                        : 'Đang cập nhật'}
                     </Typography.Text>
                   </div>
                   <div className="order-card-body">
@@ -109,9 +145,27 @@ export function MyOrdersPage() {
                       <span>Tổng tiền</span>
                       <strong>{formatMoney(order.finalAmount ?? order.totalAmount)}</strong>
                     </div>
-                    <Button type="primary"  className="order-detail-button" href={`/orders/${order.orderId}`}>
-                      <p style={{color:'white'}}>Xem chi tiết</p>
-                    </Button>
+                    <Space className="order-card-actions">
+                      {order.fulfillmentStatus === 'DELIVERING' ? (
+                        <Popconfirm
+                          title="Xác nhận đã nhận đơn hàng?"
+                          okText="Đã nhận"
+                          cancelText="Đóng"
+                          onConfirm={() => confirmReceivedMutation.mutate(order.orderId)}
+                        >
+                          <Button className="order-received-button" loading={confirmReceivedMutation.isPending}>
+                            Đã nhận đơn hàng
+                          </Button>
+                        </Popconfirm>
+                      ) : null}
+                      <Button
+                        type="primary"
+                        className="order-detail-button"
+                        href={`/orders/${order.orderId}`}
+                      >
+                        Xem chi tiết
+                      </Button>
+                    </Space>
                   </div>
                 </Card>
               )

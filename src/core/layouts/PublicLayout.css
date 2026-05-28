@@ -228,6 +228,14 @@
   color: #475569;
 }
 
+.public-footer-links > :nth-child(4) {
+  order: -1;
+}
+
+.public-footer-links > :nth-child(n + 5) {
+  display: none;
+}
+
 .public-copyright {
   padding-top: 18px;
   margin-top: 22px;

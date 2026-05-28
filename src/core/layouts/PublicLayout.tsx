@@ -115,10 +115,17 @@ function PublicLayoutImpl() {
   )
 
   const [searchValue, setSearchValue] = useState('')
-  const booksQuery = useApiQuery(['catalog', 'books'], () => catalogApi.getBooks())
+  const searchKeyword = searchValue.trim()
+  const booksQuery = useApiQuery(
+    ['catalog', 'books', 'suggestions', searchKeyword],
+    () => catalogApi.getBooks({ title: searchKeyword }),
+    {
+      enabled: searchKeyword.length > 0,
+    }
+  )
 
   const suggestionOptions = useMemo(() => {
-    const keyword = searchValue.trim().toLowerCase()
+    const keyword = searchKeyword.toLowerCase()
     if (!keyword) return []
 
     function isActive(entity: { active?: boolean; isActive?: boolean }) {
@@ -142,7 +149,7 @@ function PublicLayoutImpl() {
           </div>
         ),
       }))
-  }, [booksQuery.data, searchValue])
+  }, [booksQuery.data, searchKeyword])
 
   const handleLogout = useCallback(async () => {
     await logout()
@@ -368,34 +375,33 @@ function PublicLayoutImpl() {
         </section>
 
         <Row gutter={[24, 24]} className="public-footer-links">
+          <Col xs={12} md={5} className="public-footer-new-section public-footer-service">
+            <h4>DỊCH VỤ</h4>
+            <Link to="/terms">Điều khoản sử dụng</Link>
+            <Link to="/privacy/personal-data">Chính sách bảo mật thông tin cá nhân</Link>
+            <Link to="/privacy/payment">Chính sách bảo mật thanh toán</Link>
+            <Link to="/about-fahasa">Giới thiệu SE Book</Link>
+          </Col>
+          <Col xs={12} md={6} className="public-footer-new-section public-footer-support">
+            <h4>HỖ TRỢ</h4>
+            <Link to="/support/return-refund">Chính sách đổi - trả - hoàn tiền</Link>
+            <Link to="/support/warranty-compensation">Chính sách bảo hành - bồi hoàn</Link>
+            <Link to="/support/shipping">Chính sách vận chuyển</Link>
+            <Link to="/support/wholesale">Chính sách khách sỉ</Link>
+          </Col>
+          <Col xs={12} md={5} className="public-footer-new-section public-footer-contact">
+            <h4>Liên hệ</h4>
+            <a href="https://www.facebook.com/khaitien2406" target="_blank" rel="noreferrer">
+              Facebook
+            </a>
+            <a href="https://www.instagram.com/tiennguyen9546/" target="_blank" rel="noreferrer">
+              Instagram
+            </a>
+          </Col>
           <Col xs={24} md={8}>
             <h4>SEBook</h4>
             <p>Nhà sách trực tuyến của Nhóm 02 KTvTKPM DHKTPM18A.</p>
             <p>Địa chỉ: 12 Nguyễn Văn Bảo, Gò Vấp, TP. Hồ Chí Minh.</p>
-          </Col>
-          <Col xs={12} md={4}>
-            <h4>Dịch vụ</h4>
-            <a>Điều khoản sử dụng</a>
-            <a>Chính sách bảo mật</a>
-            <a>Chính sách đổi trả</a>
-          </Col>
-          <Col xs={12} md={4}>
-            <h4>Hỗ trợ</h4>
-            <a>Hướng dẫn mua hàng</a>
-            <a>Phương thức vận chuyển</a>
-            <a>Phương thức thanh toán</a>
-          </Col>
-          <Col xs={12} md={4}>
-            <h4>Tài khoản</h4>
-            <a>Đăng nhập</a>
-            <a>Đăng ký</a>
-            <Link to="/orders">Đơn hàng của tôi</Link>
-          </Col>
-          <Col xs={12} md={4}>
-            <h4>Liên hệ</h4>
-            <a>Facebook</a>
-            <a>Instagram</a>
-            <a>App Store / Google Play</a>
           </Col>
         </Row>
         <div className="public-copyright">
