@@ -11,6 +11,7 @@ import {
 } from '@/modules/admin/api/adminApi'
 import { invalidateAdminOrderCaches } from '@/modules/admin/utils/invalidateAdminCaches'
 import { getOrderStatusMeta } from '@/modules/order/utils/orderFormat'
+import RealtimeEventBridge from '@/modules/realtime/RealtimeEventBridge'
 import { useApiMutation, useApiQuery } from '@/shared/hooks/useApiQuery'
 
 function money(value: number | string | undefined) {
@@ -61,6 +62,7 @@ export default function AdminOrderDetailPage() {
 
   return (
     <Space direction="vertical" size="large" style={{ width: '100%' }}>
+      <RealtimeEventBridge />
       <Space>
         <Link to={ordersBasePath}>
           <Button>Quay lại</Button>

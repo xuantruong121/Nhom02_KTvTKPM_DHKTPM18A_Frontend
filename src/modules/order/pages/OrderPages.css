@@ -69,10 +69,37 @@
   color: var(--se-color-text-muted);
 }
 
+.order-card-actions {
+  display: flex;
+  flex-direction: row !important;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  min-width: max-content;
+}
+
+.order-card-actions .ant-btn {
+  height: 50px;
+  padding-inline: 20px;
+  border-radius: 8px;
+  white-space: nowrap;
+}
+
+.order-received-button,
+.order-received-button:hover,
+.order-received-button:focus {
+  color: #64748b !important;
+  background: #fff !important;
+  border-color: #dc2626 !important;
+}
+
 .order-detail-button,
 .order-detail-button:hover,
 .order-detail-button:focus {
-  color: white;
+  background: #d61f2c !important;
+  border-color: #d61f2c !important;
+  color: #111827 !important;
 }
 
 .order-detail-grid {

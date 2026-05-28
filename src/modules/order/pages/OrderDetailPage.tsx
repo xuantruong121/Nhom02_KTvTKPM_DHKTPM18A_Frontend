@@ -35,6 +35,7 @@ import {
   getOrderStatusMeta,
   toNumber,
 } from '@/modules/order/utils/orderFormat'
+import RealtimeEventBridge from '@/modules/realtime/RealtimeEventBridge'
 import { returnsApi, type ReturnReason } from '@/modules/returns/api/returnsApi'
 import { getErrorMessage, isAxiosApiError } from '@/shared/api/http'
 import { useApiQuery } from '@/shared/hooks/useApiQuery'
@@ -81,6 +82,7 @@ export function OrderDetailPage() {
   const [submittingReturn, setSubmittingReturn] = useState(false)
   const [paying, setPaying] = useState(false)
   const [cancelling, setCancelling] = useState(false)
+  const [confirmingReceived, setConfirmingReceived] = useState(false)
   const [files, setFiles] = useState<UploadFile[]>([])
 
   const orderQuery = useApiQuery(['orders', orderId], () => orderApi.getOrder(orderId ?? 0), {
@@ -98,6 +100,7 @@ export function OrderDetailPage() {
   const canPay = order?.fulfillmentStatus === 'PENDING'
   const canCancel = order?.fulfillmentStatus === 'PENDING'
   const canReturn = order?.fulfillmentStatus === 'DELIVERED'
+  const canConfirmReceived = order?.fulfillmentStatus === 'DELIVERING'
 
   const handlePay = async () => {
     if (!order) return
@@ -124,6 +127,25 @@ export function OrderDetailPage() {
       void message.error(err instanceof Error ? err.message : 'Không thể hủy đơn hàng')
     } finally {
       setCancelling(false)
+    }
+  }
+
+  const handleConfirmReceived = async () => {
+    if (!order) return
+    setConfirmingReceived(true)
+    try {
+      await orderApi.confirmReceived(order.orderId)
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['orders', order.orderId] }),
+        queryClient.invalidateQueries({ queryKey: ['orders', 'my'] }),
+        queryClient.invalidateQueries({ queryKey: ['admin', 'orders'] }),
+        queryClient.invalidateQueries({ queryKey: ['admin', 'orders', order.orderId] }),
+      ])
+      void message.success('Đã xác nhận nhận hàng')
+    } catch (err) {
+      void message.error(err instanceof Error ? err.message : 'Không thể xác nhận nhận hàng')
+    } finally {
+      setConfirmingReceived(false)
     }
   }
 
@@ -196,6 +218,7 @@ export function OrderDetailPage() {
 
   return (
     <main className="order-page">
+      <RealtimeEventBridge />
       <section className="order-shell">
         <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => navigate('/orders')}>
           Quay lại đơn hàng
@@ -290,6 +313,19 @@ export function OrderDetailPage() {
                   >
                     <Button danger block loading={cancelling}>
                       Hủy đơn hàng
+                    </Button>
+                  </Popconfirm>
+                )}
+                {canConfirmReceived && (
+                  <Popconfirm
+                    title="Xác nhận đã nhận đơn hàng?"
+                    description="Sau khi xác nhận, trạng thái đơn hàng sẽ chuyển sang đã giao."
+                    okText="Đã nhận"
+                    cancelText="Đóng"
+                    onConfirm={handleConfirmReceived}
+                  >
+                    <Button block type="primary" loading={confirmingReceived}>
+                      Đã nhận đơn hàng
                     </Button>
                   </Popconfirm>
                 )}

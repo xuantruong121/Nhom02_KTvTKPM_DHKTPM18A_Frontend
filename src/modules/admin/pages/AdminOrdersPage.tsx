@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { adminApi, type AdminOrder, type FulfillmentStatus } from '@/modules/admin/api/adminApi'
 import { compareDate, compareNumber, compareText } from '@/modules/admin/utils/tableSort'
 import { getOrderStatusMeta } from '@/modules/order/utils/orderFormat'
+import RealtimeEventBridge from '@/modules/realtime/RealtimeEventBridge'
 import { useApiQuery } from '@/shared/hooks/useApiQuery'
 
 const STATUS_OPTIONS: FulfillmentStatus[] = [
@@ -70,6 +71,7 @@ export default function AdminOrdersPage() {
 
   return (
     <Space direction="vertical" size="large" style={{ width: '100%' }}>
+      <RealtimeEventBridge />
       <Typography.Title level={3} style={{ margin: 0 }}>
         Đơn hàng
       </Typography.Title>

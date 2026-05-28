@@ -24,6 +24,7 @@ import ResetPasswordPage from '@/modules/auth/pages/ResetPasswordPage'
 import ChangePasswordPage from '@/modules/auth/pages/ChangePasswordPage'
 import { CartPage } from '@/modules/cart/pages/CartPage'
 import NotFoundPage from '@/modules/common/pages/NotFoundPage'
+import StaticInfoPage from '@/modules/common/pages/StaticInfoPage'
 import { HomePage } from '@/modules/home/pages/HomePage'
 import { BookDetailPage } from '@/modules/catalog/pages/BookDetailPage'
 import { BooksPage } from '@/modules/catalog/pages/BooksPage'
@@ -92,6 +93,26 @@ export default function AppRoutes() {
         <Route path="/collections/rankings" element={<HomeCollectionPage type="rankings" />} />
         <Route path="/collections/flash-sale" element={<HomeCollectionPage type="flash-sale" />} />
         <Route path="/promotions" element={<ActivePromotionsPage />} />
+        <Route path="/terms" element={<StaticInfoPage title="Điều khoản sử dụng" />} />
+        <Route
+          path="/privacy/personal-data"
+          element={<StaticInfoPage title="Chính sách bảo mật thông tin cá nhân" />}
+        />
+        <Route
+          path="/privacy/payment"
+          element={<StaticInfoPage title="Chính sách bảo mật thanh toán" />}
+        />
+        <Route path="/about-fahasa" element={<StaticInfoPage title="Giới thiệu Fahasa" />} />
+        <Route
+          path="/support/return-refund"
+          element={<StaticInfoPage title="Chính sách đổi - trả - hoàn tiền" />}
+        />
+        <Route
+          path="/support/warranty-compensation"
+          element={<StaticInfoPage title="Chính sách bảo hành - bồi hoàn" />}
+        />
+        <Route path="/support/shipping" element={<StaticInfoPage title="Chính sách vận chuyển" />} />
+        <Route path="/support/wholesale" element={<StaticInfoPage title="Chính sách khách sỉ" />} />
         <Route path="/ai" element={<AiAssistantPage />} />
         <Route
           path="/cart"

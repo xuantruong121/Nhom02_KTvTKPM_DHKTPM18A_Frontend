@@ -1,0 +1,50 @@
+.static-info-page {
+  max-width: 960px;
+  padding: 32px 16px 48px;
+  margin: 0 auto;
+}
+
+.static-info-page .ant-card {
+  border-radius: 8px;
+}
+
+.static-info-page h1.ant-typography {
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.static-info-content {
+  color: #111827;
+  font-size: 15px;
+  line-height: 1.75;
+}
+
+.static-info-content .ant-typography {
+  margin-bottom: 14px;
+}
+
+.static-info-content h3.ant-typography {
+  margin-top: 28px;
+  margin-bottom: 10px;
+  font-size: 18px;
+}
+
+.static-info-content ul {
+  padding-left: 28px;
+  margin: 0 0 14px;
+}
+
+.static-info-content li {
+  margin-bottom: 10px;
+}
+
+.static-info-agreement {
+  margin-top: 28px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.static-info-signature {
+  margin-top: 28px;
+  font-weight: 700;
+}

@@ -59,4 +59,7 @@ export const orderApi = {
   cancelMyOrder(orderId: number, reason = 'Khách hàng hủy đơn trước khi xác nhận') {
     return unwrapApi<Order>(http.put(`/orders/${orderId}/cancel`, { reason }))
   },
+  confirmReceived(orderId: number) {
+    return unwrapApi<Order>(http.put(`/orders/${orderId}/received`))
+  },
 }
