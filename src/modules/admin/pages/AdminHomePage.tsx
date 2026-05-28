@@ -502,7 +502,7 @@ export default function AdminHomePage() {
       title: '',
       width: 110,
       render: () => (
-        <Link to="/admin/books">
+        <Link to="/admin/inventory">
           <Button size="small">Quản lý</Button>
         </Link>
       ),

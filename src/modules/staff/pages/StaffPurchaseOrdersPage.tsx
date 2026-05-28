@@ -24,10 +24,40 @@ import {
 } from '@/modules/admin/api/adminApi'
 import { invalidatePurchaseOrderCaches } from '@/modules/admin/utils/invalidateAdminCaches'
 import { matchesKeyword } from '@/modules/admin/utils/search'
-import { compareNumber, compareText } from '@/modules/admin/utils/tableSort'
+import { compareDate, compareNumber, compareText } from '@/modules/admin/utils/tableSort'
 import { useApiMutation, useApiQuery } from '@/shared/hooks/useApiQuery'
 
 type POAction = 'submit' | 'approve' | 'return' | 'receive' | 'cancel'
+
+const statusLabels: Record<PurchaseOrderStatus, string> = {
+  DRAFT: 'Bản nháp',
+  SUBMITTED: 'Chờ duyệt',
+  APPROVED: 'Đã duyệt',
+  RETURNED: 'Trả về',
+  RECEIVED: 'Đã nhập kho',
+  CANCELLED: 'Đã hủy',
+}
+
+const statusColors: Record<PurchaseOrderStatus, string> = {
+  DRAFT: 'default',
+  SUBMITTED: 'processing',
+  APPROVED: 'blue',
+  RETURNED: 'orange',
+  RECEIVED: 'green',
+  CANCELLED: 'red',
+}
+
+const actionLabels: Record<POAction, string> = {
+  submit: 'Gửi duyệt',
+  approve: 'Duyệt',
+  return: 'Trả về',
+  receive: 'Xác nhận nhập kho',
+  cancel: 'Hủy',
+}
+
+function formatDate(value?: string) {
+  return value ? new Date(value).toLocaleString('vi-VN') : '-'
+}
 
 export default function StaffPurchaseOrdersPage() {
   const { message } = App.useApp()
@@ -113,10 +143,17 @@ export default function StaffPurchaseOrdersPage() {
       title: 'Trạng thái',
       dataIndex: 'status',
       render: (value: PurchaseOrderStatus) => (
-        <Tag color={value === 'CANCELLED' ? 'red' : 'blue'}>{value}</Tag>
+        <Tag color={statusColors[value]}>{statusLabels[value]}</Tag>
       ),
       width: 140,
-      sorter: (a, b) => compareText(a.status, b.status),
+      sorter: (a, b) => compareText(statusLabels[a.status], statusLabels[b.status]),
+    },
+    {
+      title: 'Ngày tạo',
+      dataIndex: 'createdAt',
+      width: 170,
+      render: formatDate,
+      sorter: (a, b) => compareDate(a.createdAt, b.createdAt),
     },
     {
       title: 'Tổng tiền',
@@ -139,7 +176,7 @@ export default function StaffPurchaseOrdersPage() {
         <Space wrap>
           {getActions(po.status).map((action) => (
             <Button key={action} size="small" onClick={() => setActive({ po, action })}>
-              {action}
+              {actionLabels[action]}
             </Button>
           ))}
           <Link to={`${po.id}`}>
@@ -212,7 +249,7 @@ export default function StaffPurchaseOrdersPage() {
               <Space direction="vertical" style={{ width: '100%' }}>
                 {fields.map((field) => (
                   <Space key={field.key} align="baseline">
-                    <Form.Item name={[field.name, 'bookId']} rules={[{ required: true }]}>
+                    <Form.Item name={[field.name, 'bookId']} label="Sách" rules={[{ required: true }]}>
                       <Select
                         showSearch
                         placeholder="Sách"
@@ -221,13 +258,15 @@ export default function StaffPurchaseOrdersPage() {
                         optionFilterProp="label"
                       />
                     </Form.Item>
-                    <Form.Item name={[field.name, 'quantity']} rules={[{ required: true }]}>
-                      <InputNumber placeholder="SL" min={1} />
+                    <Form.Item name={[field.name, 'quantity']} label="Số lượng nhập" rules={[{ required: true }]}>
+                      <InputNumber placeholder="Số lượng" min={1} />
                     </Form.Item>
-                    <Form.Item name={[field.name, 'price']} rules={[{ required: true }]}>
-                      <InputNumber placeholder="Giá" min={0} />
+                    <Form.Item name={[field.name, 'price']} label="Đơn giá nhập" rules={[{ required: true }]}>
+                      <InputNumber placeholder="Đơn giá" min={0} />
                     </Form.Item>
-                    <Button onClick={() => remove(field.name)}>Xóa</Button>
+                    <Form.Item label=" ">
+                      <Button onClick={() => remove(field.name)}>Xóa</Button>
+                    </Form.Item>
                   </Space>
                 ))}
                 <Button onClick={() => add({ quantity: 1, price: 0 })}>Thêm sách</Button>
@@ -252,7 +291,9 @@ export default function StaffPurchaseOrdersPage() {
             onChange={(event) => setReason(event.target.value)}
           />
         ) : (
-          <Typography.Text>Xác nhận thao tác {active?.action}</Typography.Text>
+          <Typography.Text>
+            Xác nhận thao tác {active ? actionLabels[active.action].toLowerCase() : ''}
+          </Typography.Text>
         )}
       </Modal>
     </Space>

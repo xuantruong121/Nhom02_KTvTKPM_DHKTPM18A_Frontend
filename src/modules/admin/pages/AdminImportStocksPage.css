@@ -1,0 +1,15 @@
+.inventory-row-critical > td {
+  background: #fff1f0;
+}
+
+.inventory-row-critical:hover > td {
+  background: #ffe7e6 !important;
+}
+
+.inventory-row-low > td {
+  background: #fff7e6;
+}
+
+.inventory-row-low:hover > td {
+  background: #fff1d6 !important;
+}
