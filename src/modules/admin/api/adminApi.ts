@@ -260,6 +260,61 @@ export type InventoryStock = {
   updatedAt?: string
 }
 
+export type StocktakeStatus =
+  | 'IN_PROGRESS'
+  | 'SUBMITTED'
+  | 'APPROVED'
+  | 'REJECTED'
+  | 'CANCELLED'
+
+export type StocktakeSummary = {
+  id: number
+  name: string
+  status: StocktakeStatus
+  statusLabel: string
+  assignedStaffId?: number | null
+  assignedStaffEmail?: string | null
+  createdBy: string
+  createdAt?: string
+  submittedAt?: string | null
+  approvedAt?: string | null
+  itemCount: number
+  differenceCount: number
+}
+
+export type StocktakeItem = {
+  id: number
+  bookId: number
+  systemQuantity: number
+  actualQuantity?: number | null
+  difference?: number | null
+  note?: string | null
+}
+
+export type StocktakeSession = StocktakeSummary & {
+  submittedBy?: string | null
+  approvedBy?: string | null
+  rejectedBy?: string | null
+  rejectedAt?: string | null
+  rejectReason?: string | null
+  items: StocktakeItem[]
+}
+
+export type CreateStocktakePayload = {
+  name: string
+  assignedStaffId?: number | null
+  assignedStaffEmail?: string | null
+  bookIds: number[]
+}
+
+export type UpdateStocktakeActualsPayload = {
+  items: Array<{
+    bookId: number
+    actualQuantity: number
+    note?: string
+  }>
+}
+
 export type OrderFilters = {
   status?: FulfillmentStatus
   customerKeyword?: string
@@ -477,6 +532,33 @@ export const adminApi = {
   },
   confirmStockAdjustment(payload: { bookId: number; adjustmentQuantity: number; reason: string }) {
     return unwrapApi<string>(http.post('/logistics/stock-adjustments', payload))
+  },
+  getStocktakes() {
+    return unwrapApi<StocktakeSummary[]>(http.get('/admin/stocktakes'))
+  },
+  getStocktake(id: number) {
+    return unwrapApi<StocktakeSession>(http.get(`/admin/stocktakes/${id}`))
+  },
+  createStocktake(payload: CreateStocktakePayload) {
+    return unwrapApi<StocktakeSession>(http.post('/admin/stocktakes', payload))
+  },
+  assignStocktake(id: number, payload: { assignedStaffId?: number | null; assignedStaffEmail?: string | null }) {
+    return unwrapApi<StocktakeSession>(http.put(`/admin/stocktakes/${id}/assign`, payload))
+  },
+  updateStocktakeActuals(id: number, payload: UpdateStocktakeActualsPayload) {
+    return unwrapApi<StocktakeSession>(http.put(`/admin/stocktakes/${id}/actuals`, payload))
+  },
+  submitStocktake(id: number) {
+    return unwrapApi<StocktakeSession>(http.post(`/admin/stocktakes/${id}/submit`))
+  },
+  approveStocktake(id: number) {
+    return unwrapApi<StocktakeSession>(http.post(`/admin/stocktakes/${id}/approve`))
+  },
+  rejectStocktake(id: number, reason: string) {
+    return unwrapApi<StocktakeSession>(http.post(`/admin/stocktakes/${id}/reject`, { reason }))
+  },
+  cancelStocktake(id: number) {
+    return unwrapApi<StocktakeSession>(http.post(`/admin/stocktakes/${id}/cancel`))
   },
   getInventory() {
     return unwrapApi<InventoryStock[]>(http.get('/admin/inventory'))

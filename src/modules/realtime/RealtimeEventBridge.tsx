@@ -67,6 +67,7 @@ export default function RealtimeEventBridge() {
         ['admin', 'dashboard'],
         ['admin', 'orders'],
         ['admin', 'inventory'],
+        ['admin', 'stocktakes'],
         ['admin', 'books'],
         ['admin', 'categories'],
         ['admin', 'bookCategories'],
