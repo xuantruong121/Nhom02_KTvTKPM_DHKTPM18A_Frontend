@@ -2,6 +2,7 @@ import {
   BookOutlined,
   CheckCircleOutlined,
   GiftOutlined,
+  HeartFilled,
   HeartOutlined,
   MinusOutlined,
   PlusOutlined,
@@ -39,6 +40,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { catalogApi, type Book, type Category } from '@/modules/catalog/api/catalogApi'
 import { BookCard } from '@/modules/catalog/components/BookCard'
 import { useAddToCart } from '@/modules/cart/hooks/useAddToCart'
+import { useFavoriteBooks } from '@/modules/favorites/hooks/useFavoriteBooks'
 import { homeApi } from '@/modules/home/api/homeApi'
 import { useApiMutation, useApiQuery } from '@/shared/hooks/useApiQuery'
 import { useIsAuthenticated } from '@/shared/store/authStore'
@@ -96,6 +98,7 @@ export function BookDetailPage() {
   const [reviewForm] = Form.useForm<{ rating: number; content?: string }>()
   const isAuthenticated = useIsAuthenticated()
   const { addToCart, isPending: isAddingToCart } = useAddToCart()
+  const { isFavorite, toggleFavorite } = useFavoriteBooks()
 
   const bookQuery = useApiQuery(['catalog', 'book', bookId], () => catalogApi.getBook(bookId), {
     enabled: Number.isFinite(bookId),
@@ -215,6 +218,17 @@ export function BookDetailPage() {
     }
   })
   const stock = book.quantity
+  const favorite = isFavorite(book.id)
+  const handleToggleFavorite = () => {
+    if (!isAuthenticated) {
+      void message.info('Vui lòng đăng nhập để lưu sản phẩm yêu thích')
+      navigate('/auth/login')
+      return
+    }
+
+    const added = toggleFavorite(book.id)
+    void message.success(added ? 'Đã thêm vào sản phẩm yêu thích' : 'Đã bỏ khỏi sản phẩm yêu thích')
+  }
   const openReviewModal = () => {
     if (!isAuthenticated) {
       void message.info('Vui lòng đăng nhập để viết đánh giá')
@@ -380,7 +394,12 @@ export function BookDetailPage() {
                 >
                   Mua ngay
                 </Button>
-                <Button size="large" icon={<HeartOutlined />} />
+                <Button
+                  size="large"
+                  icon={favorite ? <HeartFilled /> : <HeartOutlined />}
+                  className={favorite ? 'book-favorite-button active' : 'book-favorite-button'}
+                  onClick={handleToggleFavorite}
+                />
               </Flex>
             </div>
           </div>

@@ -35,7 +35,6 @@ import {
   getOrderStatusMeta,
   toNumber,
 } from '@/modules/order/utils/orderFormat'
-import RealtimeEventBridge from '@/modules/realtime/RealtimeEventBridge'
 import { returnsApi, type ReturnReason } from '@/modules/returns/api/returnsApi'
 import { getErrorMessage, isAxiosApiError } from '@/shared/api/http'
 import { useApiQuery } from '@/shared/hooks/useApiQuery'
@@ -218,7 +217,6 @@ export function OrderDetailPage() {
 
   return (
     <main className="order-page">
-      <RealtimeEventBridge />
       <section className="order-shell">
         <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => navigate('/orders')}>
           Quay lại đơn hàng

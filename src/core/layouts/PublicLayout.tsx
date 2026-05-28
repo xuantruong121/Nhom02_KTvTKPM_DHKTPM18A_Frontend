@@ -5,6 +5,7 @@ import {
   EnvironmentOutlined,
   FileTextOutlined,
   GlobalOutlined,
+  HeartOutlined,
   LoginOutlined,
   LogoutOutlined,
   PercentageOutlined,
@@ -195,6 +196,11 @@ function PublicLayoutImpl() {
           icon: <FileTextOutlined />,
           label: <Link to="/orders">Đơn hàng của tôi</Link>,
         },
+        {
+          key: 'favorites',
+          icon: <HeartOutlined />,
+          label: <Link to="/profile/favorites">Sản phẩm yêu thích</Link>,
+        },
         { type: 'divider' as const },
         {
           key: 'logout',
@@ -330,13 +336,14 @@ function PublicLayoutImpl() {
           <Link to="/ai">
             <RobotOutlined /> Trợ lý AI
           </Link>
+          <Link to="/books">Tất cả sách</Link>
           <Link to="/#flash-sale" onClick={scrollToHomeSection('flash-sale')}>
             <AppstoreOutlined /> Flash Sale
           </Link>
           <Link to="/#new-books" onClick={scrollToHomeSection('new-books')}>
             Sách mới
           </Link>
-          <Link to="/books">Tất cả sách</Link>
+
           <Link to="/orders">Đơn hàng của tôi</Link>
           <Link to="/#featured-categories" onClick={scrollToHomeSection('featured-categories')}>
             Danh mục nổi bật

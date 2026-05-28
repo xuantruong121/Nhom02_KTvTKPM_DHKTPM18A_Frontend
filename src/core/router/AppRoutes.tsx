@@ -45,6 +45,7 @@ import AiAssistantPage from '@/modules/ai/pages/AiAssistantPage'
 import AdminAiPage from '@/modules/admin/pages/AdminAiPage'
 import { HomeCollectionPage } from '@/modules/home/pages/HomeCollectionPage'
 import ActivePromotionsPage from '@/modules/promotion/pages/ActivePromotionsPage'
+import FavoriteBooksPage from '@/modules/favorites/pages/FavoriteBooksPage'
 
 export default function AppRoutes() {
   return (
@@ -168,6 +169,7 @@ export default function AppRoutes() {
       >
         <Route index element={<ProfilePage />} />
         <Route path="addresses" element={<AddressPage />} />
+        <Route path="favorites" element={<FavoriteBooksPage />} />
         <Route path="change-password" element={<ChangePasswordPage />} />
       </Route>
 

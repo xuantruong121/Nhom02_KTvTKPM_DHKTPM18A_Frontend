@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import { env } from '@/shared/config/env'
 import { useAuthStore } from '@/shared/store/authStore'
 import type { RealtimeEvent } from '@/modules/realtime/types'
+import { notifySessionExpired } from '@/shared/auth/sessionExpiredEvent'
 
 function parseRealtimeEvent(raw: string): RealtimeEvent | null {
   try {
@@ -21,11 +22,10 @@ export default function RealtimeEventBridge() {
   const user = useAuthStore((s) => s.user)
 
   useEffect(() => {
-    if (!accessToken || !user) {
-      return undefined
-    }
-
-    const streamUrl = `${env.apiBaseUrl}/notifications/stream?token=${encodeURIComponent(accessToken)}`
+    const streamUrl =
+      accessToken && user
+        ? `${env.apiBaseUrl}/notifications/stream?token=${encodeURIComponent(accessToken)}`
+        : `${env.apiBaseUrl}/notifications/public-stream`
     const eventSource = new EventSource(streamUrl)
 
     const invalidateOrderCaches = (orderId?: number | null) => {
@@ -82,6 +82,8 @@ export default function RealtimeEventBridge() {
         ['staff', 'categories'],
         ['catalog', 'books'],
         ['catalog', 'categories'],
+        ['home'],
+        ['promotions', 'active'],
         ['home', 'flash-sale', 'active'],
       ].forEach((queryKey) => {
         void queryClient.invalidateQueries({ queryKey })
@@ -119,7 +121,7 @@ export default function RealtimeEventBridge() {
           invalidateOrderCaches(payload.orderId)
           void queryClient.invalidateQueries({ queryKey: ['cart'] })
           invalidateInventoryCaches(payload.bookId)
-          if (user.role !== 'CUSTOMER') {
+          if (user && user.role !== 'CUSTOMER') {
             notification.info({
               message: payload.message || 'Có đơn hàng mới',
               description: payload.orderId ? `Mã đơn hàng: #${payload.orderId}` : undefined,
@@ -129,19 +131,19 @@ export default function RealtimeEventBridge() {
           break
         case 'PAYMENT_SUCCESS':
           invalidateOrderCaches(payload.orderId)
-          if (user.role === 'CUSTOMER') {
+          if (user?.role === 'CUSTOMER') {
             notification.success({ message: payload.message || 'Thanh toán thành công', placement: 'topRight' })
           }
           break
         case 'PAYMENT_FAILED':
           invalidateOrderCaches(payload.orderId)
-          if (user.role === 'CUSTOMER') {
+          if (user?.role === 'CUSTOMER') {
             notification.warning({ message: payload.message || 'Thanh toán chưa hoàn tất', placement: 'topRight' })
           }
           break
         case 'ORDER_STATUS_CHANGED':
           invalidateOrderCaches(payload.orderId)
-          if (user.role === 'CUSTOMER') {
+          if (user?.role === 'CUSTOMER') {
             notification.info({ message: payload.message || 'Đơn hàng đã được cập nhật', placement: 'topRight' })
           }
           break
@@ -151,7 +153,7 @@ export default function RealtimeEventBridge() {
           break
         case 'PURCHASE_ORDER_UPDATED':
           invalidatePurchaseOrderCaches()
-          if (user.role === 'ADMIN' || user.role === 'STAFF_WAREHOUSE') {
+          if (user?.role === 'ADMIN' || user?.role === 'STAFF_WAREHOUSE') {
             notification.info({
               message: payload.message || 'PO mua hàng đã được cập nhật',
               placement: 'topRight',
@@ -164,7 +166,7 @@ export default function RealtimeEventBridge() {
         case 'REVIEW_UPDATED':
         case 'REVIEW_NEEDS_ACTION':
           invalidateReviewCaches(payload.bookId)
-          if (user.role === 'ADMIN') {
+          if (user?.role === 'ADMIN') {
             notification.warning({
               message: payload.message || 'Có đánh giá mới',
               description: payload.bookId ? `Mã sách: #${payload.bookId}` : undefined,
@@ -174,12 +176,17 @@ export default function RealtimeEventBridge() {
           break
         case 'RETURN_STATUS_CHANGED':
           invalidateReturnCaches()
-          if (user.role === 'CUSTOMER') {
+          if (user?.role === 'CUSTOMER') {
             notification.info({
               message: payload.message || 'Yêu cầu trả hàng đã được cập nhật',
               placement: 'topRight',
             })
           }
+          break
+        case 'SESSION_EXPIRED':
+          eventSource.close()
+          useAuthStore.getState().clearAuth()
+          notifySessionExpired()
           break
         default:
           break

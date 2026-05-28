@@ -1,0 +1,32 @@
+.favorite-books-page {
+  background: #f5f5f5;
+  min-height: 60vh;
+  padding: 24px 0;
+}
+
+.favorite-books-shell {
+  width: min(1180px, calc(100% - 32px));
+  margin: 0 auto;
+}
+
+.favorite-books-card {
+  border-radius: 8px;
+}
+
+.favorite-books-title {
+  margin-bottom: 20px;
+}
+
+.favorite-books-title .anticon {
+  color: #cf1f2b;
+  font-size: 24px;
+}
+
+.favorite-books-title h2 {
+  margin: 0;
+}
+
+.favorite-books-skeleton-cover {
+  width: 100% !important;
+  height: 220px !important;
+}

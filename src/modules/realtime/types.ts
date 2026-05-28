@@ -10,6 +10,7 @@ export type RealtimeEventType =
   | 'REVIEW_UPDATED'
   | 'REVIEW_NEEDS_ACTION'
   | 'RETURN_STATUS_CHANGED'
+  | 'SESSION_EXPIRED'
 
 export type RealtimeEvent = {
   type: RealtimeEventType

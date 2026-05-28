@@ -1,6 +1,8 @@
 import { BookOutlined } from '@ant-design/icons'
 import { Spin, Typography } from 'antd'
 import { useEffect, type ReactNode } from 'react'
+import RealtimeEventBridge from '@/modules/realtime/RealtimeEventBridge'
+import SessionExpiredModal from '@/modules/auth/SessionExpiredModal'
 import { useAuthInitializing, useAuthStore } from '@/shared/store/authStore'
 
 type Props = { children: ReactNode }
@@ -19,10 +21,13 @@ export default function AuthInitializer({ children }: Props) {
     void initialize()
   }, [initialize])
 
-  if (isInitializing) {
-    return <SessionRestoringSplash />
-  }
-  return <>{children}</>
+  return (
+    <>
+      {isInitializing ? <SessionRestoringSplash /> : children}
+      <RealtimeEventBridge />
+      <SessionExpiredModal />
+    </>
+  )
 }
 
 function SessionRestoringSplash() {
