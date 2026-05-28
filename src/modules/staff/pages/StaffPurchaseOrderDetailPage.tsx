@@ -19,6 +19,28 @@ function money(value: number | string | undefined) {
   return Number(value ?? 0).toLocaleString('vi-VN')
 }
 
+function formatDate(value?: string) {
+  return value ? new Date(value).toLocaleString('vi-VN') : '-'
+}
+
+const statusLabels: Record<PurchaseOrderStatus, string> = {
+  DRAFT: 'Bản nháp',
+  SUBMITTED: 'Chờ duyệt',
+  APPROVED: 'Đã duyệt',
+  RETURNED: 'Trả về',
+  RECEIVED: 'Đã nhập kho',
+  CANCELLED: 'Đã hủy',
+}
+
+const statusColors: Record<PurchaseOrderStatus, string> = {
+  DRAFT: 'default',
+  SUBMITTED: 'processing',
+  APPROVED: 'blue',
+  RETURNED: 'orange',
+  RECEIVED: 'green',
+  CANCELLED: 'red',
+}
+
 export default function StaffPurchaseOrderDetailPage() {
   const { message } = App.useApp()
   const queryClient = useQueryClient()
@@ -80,9 +102,10 @@ export default function StaffPurchaseOrderDetailPage() {
         <Descriptions bordered column={2}>
           <Descriptions.Item label="Nhà cung cấp">{po?.supplier?.name ?? '-'}</Descriptions.Item>
           <Descriptions.Item label="Trạng thái">
-            <Tag color={po?.status === 'CANCELLED' ? 'red' : 'blue'}>{po?.status}</Tag>
+            {po ? <Tag color={statusColors[po.status]}>{statusLabels[po.status]}</Tag> : '-'}
           </Descriptions.Item>
           <Descriptions.Item label="Tổng tiền">{money(po?.totalAmount)}</Descriptions.Item>
+          <Descriptions.Item label="Ngày tạo">{formatDate(po?.createdAt)}</Descriptions.Item>
           <Descriptions.Item label="Người tạo">{po?.createdBy ?? '-'}</Descriptions.Item>
           <Descriptions.Item label="Người duyệt">{po?.approvedBy ?? '-'}</Descriptions.Item>
           <Descriptions.Item label="Người nhận">{po?.receivedBy ?? '-'}</Descriptions.Item>
@@ -138,7 +161,7 @@ const actionLabels: Record<POAction, string> = {
   submit: 'Gửi duyệt',
   approve: 'Duyệt',
   return: 'Trả về',
-  receive: 'Nhận hàng',
+  receive: 'Xác nhận nhập kho',
   cancel: 'Hủy',
 }
 

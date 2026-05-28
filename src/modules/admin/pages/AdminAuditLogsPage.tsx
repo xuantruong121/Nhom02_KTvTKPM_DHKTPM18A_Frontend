@@ -11,6 +11,50 @@ function formatDate(value?: string) {
   return new Date(value).toLocaleString('vi-VN')
 }
 
+const actionLabels: Record<string, string> = {
+  ADMIN_CREATE_STAFF: 'Tạo nhân viên',
+  ADMIN_LOCK_USER: 'Khóa tài khoản',
+  STAFF_CREATE_BOOK: 'Tạo sách',
+  STAFF_UPDATE_BOOK: 'Cập nhật sách',
+  STAFF_CREATE_CATEGORY: 'Tạo danh mục',
+  STAFF_UPDATE_CATEGORY: 'Cập nhật danh mục',
+  STAFF_DELETE_CATEGORY: 'Xóa danh mục',
+  STAFF_INIT_STOCK: 'Khởi tạo tồn kho',
+  STAFF_INCREASE_STOCK: 'Tăng tồn kho',
+  STAFF_DECREASE_STOCK: 'Giảm tồn kho',
+  STAFF_APPROVE_RETURN: 'Duyệt trả hàng',
+  STAFF_RECEIVE_RETURN: 'Nhận hàng trả',
+  STAFF_REFUND_RETURN: 'Hoàn tiền trả hàng',
+  STAFF_REJECT_RETURN: 'Từ chối trả hàng',
+}
+
+function actionLabel(action: string) {
+  return actionLabels[action] ?? action.replaceAll('_', ' ')
+}
+
+function readableTarget(log: AuditLog) {
+  const target = log.target?.trim()
+  if (!target) return 'Đối tượng hệ thống'
+  if (/^\d+$/.test(target)) return `${inferTargetPrefix(log.action)} ${target}`
+  return redactSensitive(target)
+}
+
+function inferTargetPrefix(action: string) {
+  if (action.includes('BOOK') || action.includes('STOCK')) return 'ID sách'
+  if (action.includes('CATEGORY')) return 'ID danh mục'
+  if (action.includes('RETURN')) return 'ID yêu cầu trả hàng'
+  if (action.includes('USER') || action.includes('STAFF')) return 'ID tài khoản'
+  return 'ID đối tượng'
+}
+
+function redactSensitive(value?: string) {
+  if (!value) return '-'
+  return value
+    .replace(/password=[^,\])}]+/gi, 'password=***')
+    .replace(/token=[^,\])}]+/gi, 'token=***')
+    .replace(/secret=[^,\])}]+/gi, 'secret=***')
+}
+
 export default function AdminAuditLogsPage() {
   const [keyword, setKeyword] = useState('')
   const logsQuery = useApiQuery(['admin', 'auditLogs'], () => adminApi.getAuditLogs(), {
@@ -24,8 +68,8 @@ export default function AdminAuditLogsPage() {
           keyword,
           log.userId,
           log.role,
-          log.action,
-          log.target,
+          actionLabel(log.action),
+          readableTarget(log),
           log.oldValue,
           log.newValue
         )
@@ -55,11 +99,23 @@ export default function AdminAuditLogsPage() {
       title: 'Hành động',
       dataIndex: 'action',
       width: 180,
-      render: (value: string) => <Tag color="blue">{value}</Tag>,
-      sorter: (a, b) => compareText(a.action, b.action),
+      render: (value: string) => <Tag color="blue">{actionLabel(value)}</Tag>,
+      sorter: (a, b) => compareText(actionLabel(a.action), actionLabel(b.action)),
     },
-    { title: 'Đối tượng', dataIndex: 'target', ellipsis: true, sorter: (a, b) => compareText(a.target, b.target) },
-    { title: 'Giá trị mới', dataIndex: 'newValue', ellipsis: true, sorter: (a, b) => compareText(a.newValue, b.newValue) },
+    {
+      title: 'Đối tượng',
+      dataIndex: 'target',
+      ellipsis: true,
+      render: (_, log) => readableTarget(log),
+      sorter: (a, b) => compareText(readableTarget(a), readableTarget(b)),
+    },
+    {
+      title: 'Giá trị mới',
+      dataIndex: 'newValue',
+      ellipsis: true,
+      render: redactSensitive,
+      sorter: (a, b) => compareText(redactSensitive(a.newValue), redactSensitive(b.newValue)),
+    },
   ]
 
   return (

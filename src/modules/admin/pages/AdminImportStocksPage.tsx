@@ -1,4 +1,4 @@
-import { App, Button, Card, Input, InputNumber, Space, Table, Typography } from 'antd'
+import { App, Button, Card, Input, InputNumber, Space, Table, Tag, Typography } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
@@ -7,11 +7,21 @@ import { invalidateCatalogStockCaches } from '@/modules/admin/utils/invalidateAd
 import { matchesKeyword } from '@/modules/admin/utils/search'
 import { compareDate, compareNumber, compareText } from '@/modules/admin/utils/tableSort'
 import { useApiMutation, useApiQuery } from '@/shared/hooks/useApiQuery'
+import './AdminImportStocksPage.css'
 
 type StockAction = {
   bookId: number
   amount: number
   mode: 'increase' | 'decrease'
+}
+
+const LOW_STOCK_THRESHOLD = 10
+const CRITICAL_STOCK_THRESHOLD = 3
+
+function stockAlert(quantity: number) {
+  if (quantity <= CRITICAL_STOCK_THRESHOLD) return { label: 'Sắp hết nghiêm trọng', color: 'red' }
+  if (quantity < LOW_STOCK_THRESHOLD) return { label: 'Sắp hết hàng', color: 'orange' }
+  return { label: 'Đủ hàng', color: 'green' }
 }
 
 export default function AdminImportStocksPage() {
@@ -81,7 +91,26 @@ export default function AdminImportStocksPage() {
           bookById.get(b.bookId) ? `${bookById.get(b.bookId)?.title} ${bookById.get(b.bookId)?.author}` : b.bookId
         ),
     },
-    { title: 'Số lượng', dataIndex: 'quantity', width: 120, sorter: (a, b) => compareNumber(a.quantity, b.quantity) },
+    {
+      title: 'Số lượng tồn',
+      dataIndex: 'quantity',
+      width: 140,
+      render: (value: number) => {
+        const alert = stockAlert(value)
+        return <Tag color={alert.color}>{value}</Tag>
+      },
+      sorter: (a, b) => compareNumber(a.quantity, b.quantity),
+    },
+    {
+      title: 'Cảnh báo',
+      dataIndex: 'quantity',
+      width: 180,
+      render: (value: number) => {
+        const alert = stockAlert(value)
+        return <Tag color={alert.color}>{alert.label}</Tag>
+      },
+      sorter: (a, b) => compareNumber(a.quantity, b.quantity),
+    },
     { title: 'Cập nhật', dataIndex: 'updatedAt', width: 180, sorter: (a, b) => compareDate(a.updatedAt, b.updatedAt) },
     {
       title: 'Điều chỉnh thủ công',
@@ -136,6 +165,13 @@ export default function AdminImportStocksPage() {
             columns={columns}
             dataSource={inventory}
             loading={inventoryQuery.isLoading || booksQuery.isLoading}
+            rowClassName={(stock) =>
+              stock.quantity <= CRITICAL_STOCK_THRESHOLD
+                ? 'inventory-row-critical'
+                : stock.quantity < LOW_STOCK_THRESHOLD
+                  ? 'inventory-row-low'
+                  : ''
+            }
           />
         </Space>
       </Card>

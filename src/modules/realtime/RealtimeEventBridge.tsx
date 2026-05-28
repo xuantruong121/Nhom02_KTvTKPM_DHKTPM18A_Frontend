@@ -44,10 +44,49 @@ export default function RealtimeEventBridge() {
       void queryClient.invalidateQueries({ queryKey: ['admin', 'inventory'] })
       void queryClient.invalidateQueries({ queryKey: ['admin', 'books'] })
       void queryClient.invalidateQueries({ queryKey: ['admin', 'dashboard'] })
+      void queryClient.invalidateQueries({ queryKey: ['staff', 'purchaseOrders'] })
       void queryClient.invalidateQueries({ queryKey: ['catalog', 'books'] })
+      void queryClient.refetchQueries({ queryKey: ['admin', 'inventory'], type: 'active' })
+      void queryClient.refetchQueries({ queryKey: ['staff', 'purchaseOrders'], type: 'active' })
       if (bookId) {
         void queryClient.invalidateQueries({ queryKey: ['catalog', 'book', bookId] })
       }
+    }
+
+    const invalidatePurchaseOrderCaches = () => {
+      void queryClient.invalidateQueries({ queryKey: ['staff', 'purchaseOrders'] })
+      void queryClient.invalidateQueries({ queryKey: ['admin', 'inventory'] })
+      void queryClient.invalidateQueries({ queryKey: ['admin', 'books'] })
+      void queryClient.invalidateQueries({ queryKey: ['admin', 'dashboard'] })
+      void queryClient.refetchQueries({ queryKey: ['staff', 'purchaseOrders'], type: 'active' })
+      void queryClient.refetchQueries({ queryKey: ['admin', 'inventory'], type: 'active' })
+    }
+
+    const invalidateManagementCaches = () => {
+      ;[
+        ['admin', 'dashboard'],
+        ['admin', 'orders'],
+        ['admin', 'inventory'],
+        ['admin', 'stocktakes'],
+        ['admin', 'books'],
+        ['admin', 'categories'],
+        ['admin', 'bookCategories'],
+        ['admin', 'users'],
+        ['admin', 'suppliers'],
+        ['admin', 'reviews'],
+        ['admin', 'coupons'],
+        ['admin', 'flashSales'],
+        ['admin', 'auditLogs'],
+        ['staff', 'purchaseOrders'],
+        ['staff', 'returns'],
+        ['staff', 'categories'],
+        ['catalog', 'books'],
+        ['catalog', 'categories'],
+        ['home', 'flash-sale', 'active'],
+      ].forEach((queryKey) => {
+        void queryClient.invalidateQueries({ queryKey })
+      })
+      void queryClient.refetchQueries({ type: 'active' })
     }
 
     const invalidateReviewCaches = (bookId?: number | null) => {
@@ -109,6 +148,18 @@ export default function RealtimeEventBridge() {
         case 'INVENTORY_INCREASED':
         case 'INVENTORY_DECREASED':
           invalidateInventoryCaches(payload.bookId)
+          break
+        case 'PURCHASE_ORDER_UPDATED':
+          invalidatePurchaseOrderCaches()
+          if (user.role === 'ADMIN' || user.role === 'STAFF_WAREHOUSE') {
+            notification.info({
+              message: payload.message || 'PO mua hàng đã được cập nhật',
+              placement: 'topRight',
+            })
+          }
+          break
+        case 'ADMIN_DATA_CHANGED':
+          invalidateManagementCaches()
           break
         case 'REVIEW_UPDATED':
         case 'REVIEW_NEEDS_ACTION':
