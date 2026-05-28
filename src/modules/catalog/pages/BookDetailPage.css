@@ -158,6 +158,16 @@
   min-width: 160px;
 }
 
+.book-action-row .book-favorite-button {
+  min-width: 96px;
+}
+
+.book-favorite-button.active {
+  color: #cf1f2b;
+  border-color: #cf1f2b;
+  background: #fff1f0;
+}
+
 .book-description {
   color: #334155;
   font-size: 15px;

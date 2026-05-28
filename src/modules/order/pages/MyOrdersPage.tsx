@@ -18,7 +18,6 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { orderApi } from '@/modules/order/api/orderApi'
 import { formatMoney, getOrderStatusMeta } from '@/modules/order/utils/orderFormat'
-import RealtimeEventBridge from '@/modules/realtime/RealtimeEventBridge'
 import { useApiMutation, useApiQuery } from '@/shared/hooks/useApiQuery'
 import './OrderPages.css'
 
@@ -81,7 +80,6 @@ export function MyOrdersPage() {
 
   return (
     <main className="order-page">
-      <RealtimeEventBridge />
       <section className="order-shell">
         <div className="order-heading">
           <div>

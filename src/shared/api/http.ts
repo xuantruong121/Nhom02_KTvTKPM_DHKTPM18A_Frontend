@@ -3,6 +3,7 @@ import { env } from '@/shared/config/env'
 import type { ApiErrorBody, ApiResponse } from '@/shared/api/types'
 import { getDeviceId } from '@/shared/api/deviceId'
 import { useAuthStore } from '@/shared/store/authStore'
+import { notifySessionExpired } from '@/shared/auth/sessionExpiredEvent'
 
 type RefreshPair = {
   accessToken: string
@@ -62,6 +63,8 @@ function attachResponseInterceptor(client: AxiosInstance) {
     async (error: AxiosError<ApiErrorBody>) => {
       const original = error.config as (AxiosRequestConfig & { _retried?: boolean }) | undefined
       const status = error.response?.status
+      const hadAuthenticatedSession =
+        useAuthStore.getState().accessToken !== null || useAuthStore.getState().user !== null
 
       const isAuthEndpoint =
         typeof original?.url === 'string' &&
@@ -85,6 +88,9 @@ function attachResponseInterceptor(client: AxiosInstance) {
           return client(original)
         }
         useAuthStore.getState().clearAuth()
+        if (hadAuthenticatedSession) {
+          notifySessionExpired()
+        }
       }
       return Promise.reject(error)
     }

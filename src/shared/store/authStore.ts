@@ -7,6 +7,7 @@ import type {
   RegisterRequest,
   UserRole,
 } from '@/modules/auth/types'
+import { notifySessionExpired } from '@/shared/auth/sessionExpiredEvent'
 import { decodeJwt } from '@/shared/lib/jwt'
 
 /**
@@ -136,6 +137,7 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
         } catch {
           // refresh cookie không còn hợp lệ -> dọn dẹp
           get().clearAuth()
+          notifySessionExpired()
         }
       } finally {
         set({ isInitializing: false, hasInitialized: true })
