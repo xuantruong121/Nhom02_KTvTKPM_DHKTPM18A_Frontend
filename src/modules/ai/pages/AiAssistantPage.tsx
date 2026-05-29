@@ -31,6 +31,26 @@ function orderBooksByIds(ids: number[], books: Book[]) {
   return ids.map((id) => byId.get(id)).filter((book): book is Book => Boolean(book))
 }
 
+function resolveRequestedBookCount(query: string) {
+  const digitMatch = query.match(/\b(\d{1,2})\b/)
+  if (digitMatch) {
+    return Math.min(Math.max(Number(digitMatch[1]), 1), 5)
+  }
+
+  const normalized = query
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .replace(/đ/g, 'd')
+
+  if (normalized.includes('mot ')) return 1
+  if (normalized.includes('hai ')) return 2
+  if (normalized.includes('ba ')) return 3
+  if (normalized.includes('bon ') || normalized.includes('tu ')) return 4
+  if (normalized.includes('nam ')) return 5
+  return null
+}
+
 export default function AiAssistantPage() {
   const { message } = App.useApp()
 
@@ -39,6 +59,7 @@ export default function AiAssistantPage() {
   const [semanticBooks, setSemanticBooks] = useState<Book[]>([])
   const [semanticLoading, setSemanticLoading] = useState(false)
   const [semanticError, setSemanticError] = useState<string | null>(null)
+  const [submittedSemanticQuery, setSubmittedSemanticQuery] = useState('')
 
   const [fileList, setFileList] = useState<UploadFile[]>([])
   const [ocrResult, setOcrResult] = useState<OcrResult | null>(null)
@@ -52,6 +73,15 @@ export default function AiAssistantPage() {
     }
     return 'Nhập ý tưởng, chủ đề, tác giả hoặc vấn đề bạn muốn đọc.'
   }, [semanticBooks.length, semanticIds.length])
+  const requestedSemanticCount = useMemo(
+    () => resolveRequestedBookCount(submittedSemanticQuery),
+    [submittedSemanticQuery]
+  )
+  const shouldShowInsufficientProducts =
+    !semanticLoading &&
+    Boolean(submittedSemanticQuery) &&
+    requestedSemanticCount !== null &&
+    semanticBooks.length < requestedSemanticCount
 
   async function runSemanticSearch(queryOverride?: string) {
     const query = (queryOverride ?? semanticQuery).trim()
@@ -61,6 +91,7 @@ export default function AiAssistantPage() {
     setSemanticError(null)
     setSemanticIds([])
     setSemanticBooks([])
+    setSubmittedSemanticQuery(query)
 
     try {
       const ids = await aiApi.search(query, 8)
@@ -137,6 +168,14 @@ export default function AiAssistantPage() {
                   onSearch={() => void runSemanticSearch()}
                 />
                 {semanticError ? <Alert className="ai-section-alert" type="error" title={semanticError} showIcon /> : null}
+                {shouldShowInsufficientProducts ? (
+                  <Alert
+                    className="ai-section-alert"
+                    type="warning"
+                    title="Hiện tại chúng tôi không có đủ sản phẩm cho yêu cầu của bạn"
+                    showIcon
+                  />
+                ) : null}
                 <div className="ai-result-grid">
                   {semanticLoading ? (
                     <Spin />

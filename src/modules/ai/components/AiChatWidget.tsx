@@ -1,6 +1,7 @@
 import { ClearOutlined, CloseOutlined, MessageOutlined, RobotOutlined, SendOutlined } from '@ant-design/icons'
 import { Alert, Button, Flex, Input, Space, Spin } from 'antd'
-import { useRef, useState } from 'react'
+import { useRef, useState, type PointerEvent } from 'react'
+import { Link } from 'react-router-dom'
 import { aiApi } from '@/modules/ai/api/aiApi'
 import { getErrorMessage } from '@/shared/api/http'
 import { useAuthUser } from '@/shared/store/authStore'
@@ -12,6 +13,12 @@ type ChatItem = {
 }
 
 const SESSION_STORAGE_KEY = 'sebook_ai_session_id'
+const PRODUCT_LINK_PATTERN = /(\/books\/\d+)/g
+const AI_RESPONSE_TIMEOUT_MS = 15_000
+const DEFAULT_CHAT_SIZE = { width: 390, height: 620 }
+const MIN_CHAT_SIZE = { width: 320, height: 420 }
+const AI_CLARIFY_MESSAGE =
+  'Hệ thống chưa hiểu rõ yêu cầu của bạn, hãy làm rõ nó. Ví dụ: theo tên sách, tên tác giả, thể loại mà bạn muốn.'
 
 function getSessionId() {
   try {
@@ -28,9 +35,27 @@ function getSessionId() {
   }
 }
 
+function renderMessageContent(content: string) {
+  return content.split(PRODUCT_LINK_PATTERN).map((part, index) => {
+    if (/^\/books\/\d+$/.test(part)) {
+      return (
+        <Link className="ai-product-link" to={part} key={`${part}-${index}`}>
+          Xem sản phẩm
+        </Link>
+      )
+    }
+    return part
+  })
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max)
+}
+
 export default function AiChatWidget() {
   const user = useAuthUser()
   const sessionIdRef = useRef(getSessionId())
+  const chatboxRef = useRef<HTMLElement | null>(null)
   const [chatMessage, setChatMessage] = useState('')
   const [chatItems, setChatItems] = useState<ChatItem[]>([
     {
@@ -41,6 +66,7 @@ export default function AiChatWidget() {
   const [chatLoading, setChatLoading] = useState(false)
   const [chatError, setChatError] = useState<string | null>(null)
   const [chatOpen, setChatOpen] = useState(false)
+  const [chatSize, setChatSize] = useState(DEFAULT_CHAT_SIZE)
 
   const chatCanSend = chatMessage.trim().length > 0 && !chatLoading
 
@@ -53,12 +79,24 @@ export default function AiChatWidget() {
     setChatItems((current) => [...current, { role: 'user', content }])
     setChatLoading(true)
 
+    const abortController = new AbortController()
+    let timedOut = false
+    const timeoutId = window.setTimeout(() => {
+      timedOut = true
+      abortController.abort()
+    }, AI_RESPONSE_TIMEOUT_MS)
+
     try {
-      const answer = await aiApi.chat(sessionIdRef.current, content, user?.userId ?? undefined)
+      const answer = await aiApi.chat(sessionIdRef.current, content, user?.userId ?? undefined, abortController.signal)
       setChatItems((current) => [...current, { role: 'assistant', content: answer }])
     } catch (error) {
-      setChatError(getErrorMessage(error))
+      if (timedOut) {
+        setChatItems((current) => [...current, { role: 'assistant', content: AI_CLARIFY_MESSAGE }])
+      } else {
+        setChatError(getErrorMessage(error))
+      }
     } finally {
+      window.clearTimeout(timeoutId)
       setChatLoading(false)
     }
   }
@@ -80,6 +118,34 @@ export default function AiChatWidget() {
     }
   }
 
+  function startResize(event: PointerEvent<HTMLDivElement>) {
+    event.preventDefault()
+    const rect = chatboxRef.current?.getBoundingClientRect()
+    if (!rect) return
+
+    const startX = event.clientX
+    const startY = event.clientY
+    const startWidth = rect.width
+    const startHeight = rect.height
+
+    function handlePointerMove(moveEvent: globalThis.PointerEvent) {
+      const maxWidth = Math.max(MIN_CHAT_SIZE.width, window.innerWidth - 32)
+      const maxHeight = Math.max(MIN_CHAT_SIZE.height, window.innerHeight - 48)
+      setChatSize({
+        width: clamp(startWidth + startX - moveEvent.clientX, MIN_CHAT_SIZE.width, maxWidth),
+        height: clamp(startHeight + startY - moveEvent.clientY, MIN_CHAT_SIZE.height, maxHeight),
+      })
+    }
+
+    function stopResize() {
+      window.removeEventListener('pointermove', handlePointerMove)
+      window.removeEventListener('pointerup', stopResize)
+    }
+
+    window.addEventListener('pointermove', handlePointerMove)
+    window.addEventListener('pointerup', stopResize)
+  }
+
   if (!chatOpen) {
     return (
       <Button
@@ -95,7 +161,13 @@ export default function AiChatWidget() {
   }
 
   return (
-    <section className="ai-chatbox" aria-label="SEBook Assistant chatbox">
+    <section
+      ref={chatboxRef}
+      className="ai-chatbox"
+      style={{ width: chatSize.width, height: chatSize.height }}
+      aria-label="SEBook Assistant chatbox"
+    >
+      <div className="ai-chatbox-resize-handle" onPointerDown={startResize} aria-label="Kéo để đổi kích thước" />
       <div className="ai-chatbox-header">
         <Space>
           <RobotOutlined />
@@ -110,7 +182,7 @@ export default function AiChatWidget() {
       <div className="ai-chat-list">
         {chatItems.map((item, index) => (
           <div className={`ai-message ai-message-${item.role}`} key={`${item.role}-${index}`}>
-            {item.content}
+            {renderMessageContent(item.content)}
           </div>
         ))}
         {chatLoading ? (
