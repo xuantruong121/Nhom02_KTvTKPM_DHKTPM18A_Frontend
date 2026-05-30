@@ -8,10 +8,11 @@ export type OcrResult = {
 }
 
 export const aiApi = {
-  async chat(sessionId: string, message: string, customerId?: number | null) {
+  async chat(sessionId: string, message: string, customerId?: number | null, signal?: AbortSignal) {
     const { data } = await http.post<string>('/ai/chat', message, {
       params: { sessionId, customerId: customerId ?? undefined },
       headers: { 'Content-Type': 'text/plain' },
+      signal,
     })
     return data
   },
