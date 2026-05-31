@@ -57,7 +57,11 @@ export function BookCard({ book }: { book: Book }) {
               </Typography.Text>
             ) : null}
           </Space>
-          {discount ? <Tag color="red">-{discount}%</Tag> : null}
+          {discount ? (
+            <Tag color="red" className="catalog-book-discount">
+              -{discount}%
+            </Tag>
+          ) : null}
         </Flex>
 
         <Flex align="center" justify="space-between" className="catalog-book-meta">

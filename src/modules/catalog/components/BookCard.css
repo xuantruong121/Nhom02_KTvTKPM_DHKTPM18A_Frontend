@@ -1,6 +1,7 @@
 .catalog-book-card {
   height: 100%;
   border-radius: 8px;
+  overflow: hidden;
 }
 
 .catalog-book-card .ant-card-body {
@@ -14,12 +15,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 210px;
-  padding: 14px;
+  height: 230px;
+  padding: 16px;
   margin: -12px -12px 12px;
   background: #f8fafc;
   color: #94a3b8;
   font-size: 46px;
+  overflow: hidden;
 }
 
 .catalog-book-link {
@@ -36,12 +38,23 @@
 
 .catalog-book-cover .ant-image,
 .catalog-book-cover img {
-  max-width: 100%;
-  max-height: 100%;
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
+.catalog-book-cover .ant-image {
+  text-align: center;
+}
+
+.catalog-book-cover .ant-image-mask {
+  border-radius: 4px;
+}
+
+.catalog-book-cover .ant-image-img,
 .catalog-book-cover img {
   object-fit: contain;
+  object-position: center;
 }
 
 .catalog-book-title {
@@ -61,7 +74,14 @@
 }
 
 .catalog-book-price-row {
+  align-items: flex-start;
+  gap: 8px;
   margin-top: 12px;
+}
+
+.catalog-book-discount {
+  flex: 0 0 auto;
+  margin-inline-end: 0;
 }
 
 .catalog-book-price {

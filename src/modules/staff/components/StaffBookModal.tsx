@@ -87,6 +87,11 @@ export default function StaffBookModal({ open, book, categories, loading, onCanc
         <Form.Item name="categoryIds" label="Danh mục" rules={[{ required: !book }]}>
           <Select
             mode="multiple"
+            allowClear
+            showSearch
+            optionFilterProp="label"
+            placeholder="Chọn hoặc gõ để tìm danh mục"
+            maxTagCount="responsive"
             options={categories.map((category) => ({ value: category.id, label: category.name }))}
           />
         </Form.Item>

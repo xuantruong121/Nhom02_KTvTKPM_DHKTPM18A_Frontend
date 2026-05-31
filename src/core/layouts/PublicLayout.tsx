@@ -8,7 +8,6 @@ import {
   LoginOutlined,
   LogoutOutlined,
   PercentageOutlined,
-  RobotOutlined,
   SearchOutlined,
   ShoppingCartOutlined,
   UserOutlined,
@@ -33,8 +32,9 @@ import {
 import type { MenuProps } from 'antd'
 import { useQueryClient } from '@tanstack/react-query'
 import dayjs from 'dayjs'
-import { memo, useCallback, useMemo, useState, type MouseEvent } from 'react'
-import { Link, Navigate, Outlet, useNavigate } from 'react-router-dom'
+import { memo, useCallback, useEffect, useMemo, useState, type MouseEvent } from 'react'
+import { Link, Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { accountApi } from '@/modules/account/api/accountApi'
 import { cartApi } from '@/modules/cart/api/cartApi'
 import { catalogApi } from '@/modules/catalog/api/catalogApi'
 import { notificationApi } from '@/modules/notification/api/notificationApi'
@@ -51,8 +51,16 @@ function PublicLayoutImpl() {
   const user = useAuthUser()
   const logout = useAuthStore((s) => s.logout)
   const navigate = useNavigate()
+  const location = useLocation()
   const queryClient = useQueryClient()
   const [newsletterEmail, setNewsletterEmail] = useState('')
+  const [activeHomeSection, setActiveHomeSection] = useState(() =>
+    window.location.pathname === '/' ? window.location.hash.replace('#', '') : ''
+  )
+  const profileQuery = useApiQuery(['account', 'profile'], () => accountApi.getProfile(), {
+    enabled: Boolean(user) && user?.role === 'CUSTOMER',
+    staleTime: 60_000,
+  })
   const cartQuery = useApiQuery(['cart'], () => cartApi.getCart(), {
     enabled: Boolean(user),
   })
@@ -100,17 +108,46 @@ function PublicLayoutImpl() {
       event.preventDefault()
 
       if (window.location.pathname !== '/') {
+        setActiveHomeSection(sectionId)
         navigate(`/#${sectionId}`)
         return
       }
 
       window.history.replaceState(null, '', `/#${sectionId}`)
+      setActiveHomeSection(sectionId)
       document.getElementById(sectionId)?.scrollIntoView({
         behavior: 'smooth',
         block: 'start',
       })
     },
     [navigate]
+  )
+
+  useEffect(() => {
+    setActiveHomeSection(location.pathname === '/' ? location.hash.replace('#', '') : '')
+  }, [location.hash, location.pathname])
+
+  const getNavClassName = useCallback(
+    (key: string) => {
+      const pathname = location.pathname
+      const active =
+        (key === 'books' && pathname.startsWith('/books')) ||
+        (key === 'orders' && pathname.startsWith('/orders')) ||
+        (key === 'promotions' && pathname.startsWith('/promotions')) ||
+        (key === 'flash-sale' &&
+          (pathname === '/collections/flash-sale' || (pathname === '/' && activeHomeSection === 'flash-sale'))) ||
+        (key === 'new-books' &&
+          (pathname === '/collections/new-books' || (pathname === '/' && activeHomeSection === 'new-books'))) ||
+        (key === 'featured-categories' && pathname === '/' && activeHomeSection === 'featured-categories') ||
+        (key === 'shopping-trends' &&
+          ((pathname === '/collections/trends' && location.search.includes('tab=')) ||
+            (pathname === '/' && activeHomeSection === 'shopping-trends'))) ||
+        (key === 'rankings' &&
+          (pathname === '/collections/rankings' || (pathname === '/' && activeHomeSection === 'rankings')))
+
+      return active ? 'is-active' : undefined
+    },
+    [activeHomeSection, location.pathname, location.search]
   )
 
   const [searchValue, setSearchValue] = useState('')
@@ -304,8 +341,8 @@ function PublicLayoutImpl() {
             {user ? (
               <Dropdown menu={userMenu} trigger={['click']}>
                 <Space className="public-user">
-                  <Avatar size="small" icon={<UserOutlined />} />
-                  <span>{user.fullName || user.email}</span>
+                  <Avatar size="small" src={profileQuery.data?.avatarUrl} icon={<UserOutlined />} />
+                  <span>{profileQuery.data?.fullName || user.fullName || user.email}</span>
                 </Space>
               </Dropdown>
             ) : (
@@ -321,28 +358,37 @@ function PublicLayoutImpl() {
           </Space>
         </div>
         <nav className="public-nav">
-          <Link to="/ai">
-            <RobotOutlined /> Trợ lý AI
+          <Link to="/books" className={getNavClassName('books')}>
+            Tất cả sách
           </Link>
-          <Link to="/books">Tất cả sách</Link>
-          <Link to="/#flash-sale" onClick={scrollToHomeSection('flash-sale')}>
+          <Link to="/#flash-sale" className={getNavClassName('flash-sale')} onClick={scrollToHomeSection('flash-sale')}>
             <AppstoreOutlined /> Flash Sale
           </Link>
-          <Link to="/#new-books" onClick={scrollToHomeSection('new-books')}>
+          <Link to="/#new-books" className={getNavClassName('new-books')} onClick={scrollToHomeSection('new-books')}>
             Sách mới
           </Link>
 
-          <Link to="/orders">Đơn hàng của tôi</Link>
-          <Link to="/#featured-categories" onClick={scrollToHomeSection('featured-categories')}>
+          <Link to="/orders" className={getNavClassName('orders')}>
+            Đơn hàng của tôi
+          </Link>
+          <Link
+            to="/#featured-categories"
+            className={getNavClassName('featured-categories')}
+            onClick={scrollToHomeSection('featured-categories')}
+          >
             Danh mục nổi bật
           </Link>
-          <Link to="/#shopping-trends" onClick={scrollToHomeSection('shopping-trends')}>
+          <Link
+            to="/#shopping-trends"
+            className={getNavClassName('shopping-trends')}
+            onClick={scrollToHomeSection('shopping-trends')}
+          >
             Xu hướng mua sắm
           </Link>
-          <Link to="/#rankings" onClick={scrollToHomeSection('rankings')}>
+          <Link to="/#rankings" className={getNavClassName('rankings')} onClick={scrollToHomeSection('rankings')}>
             Bảng xếp hạng
           </Link>
-          <Link to="/promotions">
+          <Link to="/promotions" className={getNavClassName('promotions')}>
             <PercentageOutlined /> Mã giảm giá
           </Link>
         </nav>
