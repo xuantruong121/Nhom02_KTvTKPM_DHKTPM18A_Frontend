@@ -56,6 +56,9 @@ export const orderApi = {
       http.post('/payments/create-payment-url', null, { params: { orderId } })
     )
   },
+  switchPendingVnpayOrderToCod(orderId: number) {
+    return unwrapApi<void>(http.post(`/payments/orders/${orderId}/switch-to-cod`))
+  },
   cancelMyOrder(orderId: number, reason = 'Khách hàng hủy đơn trước khi xác nhận') {
     return unwrapApi<Order>(http.put(`/orders/${orderId}/cancel`, { reason }))
   },

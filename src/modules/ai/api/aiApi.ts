@@ -21,6 +21,7 @@ export type AgentBookResult = {
   author?: string
   price?: number | string
   quantity: number
+  requestedQuantity?: number | null
   imageUrl?: string | null
   description?: string
 }

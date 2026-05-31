@@ -1,7 +1,7 @@
 import { ClearOutlined, CloseOutlined, MessageOutlined, RobotOutlined, SendOutlined } from '@ant-design/icons'
 import { Alert, Button, Flex, Input, Space, Spin, Tag, Typography } from 'antd'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useRef, useState, type PointerEvent } from 'react'
+import { useEffect, useRef, useState, type PointerEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { aiApi, type AgentAction, type AgentBookResult, type AgentCard, type AgentClientAction, type AgentResponse } from '@/modules/ai/api/aiApi'
 import { accountApi, type AddressDto } from '@/modules/account/api/accountApi'
@@ -61,6 +61,7 @@ export default function AiChatWidget() {
   const navigate = useNavigate()
   const sessionIdRef = useRef(getSessionId())
   const chatboxRef = useRef<HTMLElement | null>(null)
+  const chatListRef = useRef<HTMLDivElement | null>(null)
   const [chatMessage, setChatMessage] = useState('')
   const [chatItems, setChatItems] = useState<ChatItem[]>([
     {
@@ -74,6 +75,12 @@ export default function AiChatWidget() {
   const [chatSize, setChatSize] = useState(DEFAULT_CHAT_SIZE)
 
   const chatCanSend = chatMessage.trim().length > 0 && !chatLoading
+
+  useEffect(() => {
+    const chatList = chatListRef.current
+    if (!chatOpen || !chatList) return
+    chatList.scrollTo({ top: chatList.scrollHeight, behavior: 'smooth' })
+  }, [chatItems, chatLoading, chatError, chatOpen])
 
   async function sendChat(contentOverride?: string) {
     const content = (contentOverride ?? chatMessage).trim()
@@ -259,7 +266,7 @@ export default function AiChatWidget() {
         </Space>
       </div>
 
-      <div className="ai-chat-list">
+      <div className="ai-chat-list" ref={chatListRef}>
         {chatItems.map((item, index) => (
           <div className={`ai-message ai-message-${item.role}`} key={`${item.role}-${index}`}>
             {renderMessageContent(item.content)}
@@ -583,6 +590,7 @@ function cardBookToLegacy(card: AgentCard | undefined): AgentBookResult | undefi
     author: card.subtitle || undefined,
     price: card.price ?? undefined,
     quantity: card.stock ?? 0,
+    requestedQuantity: typeof card.metadata?.requestedQuantity === 'number' ? card.metadata.requestedQuantity : null,
     imageUrl: card.imageUrl,
   }
 }
@@ -649,7 +657,9 @@ function formatAddress(address: AddressDto) {
 }
 
 function buildCheckoutMessage(book: AgentBookResult | undefined, address: AddressDto, paymentMethod: 'COD' | 'VNPAY', fallbackPhone?: string) {
-  const bookText = book ? ` sách ${book.title}` : ''
+  const requestedQuantity = book?.requestedQuantity && book.requestedQuantity > 0 ? book.requestedQuantity : null
+  const quantityText = requestedQuantity ? ` ${requestedQuantity} cuốn` : ''
+  const bookText = book ? `${quantityText} sách ${book.title}` : ''
   const phone = address.phoneNumber || fallbackPhone
   const phoneText = phone ? `; số điện thoại: ${phone}` : ''
   return `Đặt hàng ${paymentMethod}${bookText}; địa chỉ giao hàng: ${formatAddress(address)}${phoneText}`
