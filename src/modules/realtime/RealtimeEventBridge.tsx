@@ -6,13 +6,45 @@ import { useAuthStore } from '@/shared/store/authStore'
 import type { RealtimeEvent } from '@/modules/realtime/types'
 import { notifySessionExpired } from '@/shared/auth/sessionExpiredEvent'
 
+type RealtimeEnvelope = {
+  event?: 'connected' | 'notification' | 'realtime'
+  data?: unknown
+}
+
 function parseRealtimeEvent(raw: string): RealtimeEvent | null {
   try {
-    const value = JSON.parse(raw) as Partial<RealtimeEvent>
-    return typeof value.type === 'string' ? (value as RealtimeEvent) : null
+    return parseRealtimePayload(JSON.parse(raw))
   } catch {
     return null
   }
+}
+
+function parseRealtimePayload(value: unknown): RealtimeEvent | null {
+  if (!value || typeof value !== 'object') {
+    return null
+  }
+  const payload = value as Partial<RealtimeEvent>
+  return typeof payload.type === 'string' ? (payload as RealtimeEvent) : null
+}
+
+function parseRealtimeEnvelope(raw: string): RealtimeEnvelope | null {
+  try {
+    const value = JSON.parse(raw) as RealtimeEnvelope
+    return typeof value.event === 'string' ? value : null
+  } catch {
+    return null
+  }
+}
+
+function buildNotificationSocketUrl(accessToken: string) {
+  const apiBaseUrl = env.apiBaseUrl.replace(/\/$/, '')
+  const baseUrl = /^https?:\/\//i.test(apiBaseUrl)
+    ? apiBaseUrl
+    : `${window.location.origin}${apiBaseUrl.startsWith('/') ? '' : '/'}${apiBaseUrl}`
+  const url = new URL(`${baseUrl}/notifications/ws`)
+  url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:'
+  url.searchParams.set('token', accessToken)
+  return url.toString()
 }
 
 export default function RealtimeEventBridge() {
@@ -22,12 +54,6 @@ export default function RealtimeEventBridge() {
   const user = useAuthStore((s) => s.user)
 
   useEffect(() => {
-    const streamUrl =
-      accessToken && user
-        ? `${env.apiBaseUrl}/notifications/stream?token=${encodeURIComponent(accessToken)}`
-        : `${env.apiBaseUrl}/notifications/public-stream`
-    const eventSource = new EventSource(streamUrl)
-
     const invalidateOrderCaches = (orderId?: number | null) => {
       void queryClient.invalidateQueries({ queryKey: ['orders'] })
       void queryClient.invalidateQueries({ queryKey: ['orders', 'my'] })
@@ -111,16 +137,7 @@ export default function RealtimeEventBridge() {
       void queryClient.invalidateQueries({ queryKey: ['admin', 'dashboard'] })
     }
 
-    eventSource.addEventListener('notification', () => {
-      invalidateNotificationCaches()
-    })
-
-    eventSource.addEventListener('realtime', (event) => {
-      const payload = parseRealtimeEvent(event.data)
-      if (!payload) {
-        return
-      }
-
+    const handleRealtimePayload = (payload: RealtimeEvent) => {
       switch (payload.type) {
         case 'ORDER_CREATED':
           invalidateOrderCaches(payload.orderId)
@@ -152,7 +169,10 @@ export default function RealtimeEventBridge() {
           invalidateOrderCaches(payload.orderId)
           invalidateNotificationCaches()
           if (user?.role === 'CUSTOMER') {
-            notification.info({ message: payload.message || 'Đơn hàng đã được cập nhật', placement: 'topRight' })
+            notification.info({
+              message: payload.message || 'Đơn hàng đã được cập nhật',
+              placement: 'topRight',
+            })
           }
           break
         case 'INVENTORY_INCREASED':
@@ -192,12 +212,67 @@ export default function RealtimeEventBridge() {
           }
           break
         case 'SESSION_EXPIRED':
-          eventSource.close()
           useAuthStore.getState().clearAuth()
           notifySessionExpired()
           break
         default:
           break
+      }
+    }
+
+    if (accessToken && user) {
+      let stopped = false
+      let socket: WebSocket | null = null
+      let reconnectTimer: ReturnType<typeof window.setTimeout> | undefined
+
+      const connect = () => {
+        socket = new WebSocket(buildNotificationSocketUrl(accessToken))
+
+        socket.onmessage = (event) => {
+          const envelope = parseRealtimeEnvelope(event.data)
+          if (!envelope) {
+            return
+          }
+          if (envelope.event === 'notification') {
+            invalidateNotificationCaches()
+            return
+          }
+          if (envelope.event === 'realtime') {
+            const payload = parseRealtimePayload(envelope.data)
+            if (payload) {
+              handleRealtimePayload(payload)
+            }
+          }
+        }
+
+        socket.onclose = () => {
+          if (!stopped) {
+            reconnectTimer = window.setTimeout(connect, 2000)
+          }
+        }
+
+        socket.onerror = () => {
+          socket?.close()
+        }
+      }
+
+      connect()
+
+      return () => {
+        stopped = true
+        if (reconnectTimer) {
+          window.clearTimeout(reconnectTimer)
+        }
+        socket?.close()
+      }
+    }
+
+    const eventSource = new EventSource(`${env.apiBaseUrl}/notifications/public-stream`)
+
+    eventSource.addEventListener('realtime', (event) => {
+      const payload = parseRealtimeEvent(event.data)
+      if (payload) {
+        handleRealtimePayload(payload)
       }
     })
 

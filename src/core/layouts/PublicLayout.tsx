@@ -36,6 +36,7 @@ import dayjs from 'dayjs'
 import { memo, useCallback, useEffect, useMemo, useState, type MouseEvent } from 'react'
 import { Link, Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { accountApi } from '@/modules/account/api/accountApi'
+import AiChatWidget from '@/modules/ai/components/AiChatWidget'
 import { cartApi } from '@/modules/cart/api/cartApi'
 import { catalogApi } from '@/modules/catalog/api/catalogApi'
 import { notificationApi } from '@/modules/notification/api/notificationApi'
@@ -403,6 +404,8 @@ function PublicLayoutImpl() {
       <Content className="public-content">
         <Outlet />
       </Content>
+
+      <AiChatWidget />
 
       <Footer className="public-footer">
         <section className="public-newsletter">
