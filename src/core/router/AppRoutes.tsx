@@ -41,7 +41,6 @@ import StaffReturnRequestsPage from '@/modules/staff/pages/StaffReturnRequestsPa
 import StaffStockCheckPage from '@/modules/staff/pages/StaffStockCheckPage'
 import ProfilePage from '@/modules/account/pages/ProfilePage'
 import AddressPage from '@/modules/account/pages/AddressPage'
-import AiAssistantPage from '@/modules/ai/pages/AiAssistantPage'
 import AdminAiPage from '@/modules/admin/pages/AdminAiPage'
 import { HomeCollectionPage } from '@/modules/home/pages/HomeCollectionPage'
 import ActivePromotionsPage from '@/modules/promotion/pages/ActivePromotionsPage'
@@ -114,7 +113,6 @@ export default function AppRoutes() {
         />
         <Route path="/support/shipping" element={<StaticInfoPage title="Chính sách vận chuyển" />} />
         <Route path="/support/wholesale" element={<StaticInfoPage title="Chính sách khách sỉ" />} />
-        <Route path="/ai" element={<AiAssistantPage />} />
         <Route
           path="/cart"
           element={

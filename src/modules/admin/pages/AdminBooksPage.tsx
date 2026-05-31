@@ -1,4 +1,4 @@
-import { App, Button, Card, DatePicker, Image, Input, Popconfirm, Space, Table, Tag, Typography } from 'antd'
+import { App, Button, Card, DatePicker, Image, Input, Popconfirm, Select, Space, Table, Tag, Typography } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useQueryClient } from '@tanstack/react-query'
 import { useMemo, useState } from 'react'
@@ -25,6 +25,7 @@ export default function AdminBooksPage({ canDelete = true, showSalesStats = true
   const [editingBook, setEditingBook] = useState<AdminBook | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
   const [keyword, setKeyword] = useState('')
+  const [categoryFilter, setCategoryFilter] = useState<number | undefined>()
   const [salesRange, setSalesRange] = useState<[Dayjs | null, Dayjs | null] | null>(null)
 
   const salesFilters = useMemo(
@@ -43,6 +44,16 @@ export default function AdminBooksPage({ canDelete = true, showSalesStats = true
     { enabled: showSalesStats }
   )
   const categoriesQuery = useApiQuery(['admin', 'bookCategories'], () => adminApi.getCategories())
+
+  const categories = useMemo(() => categoriesQuery.data ?? [], [categoriesQuery.data])
+  const categoryOptions = useMemo(
+    () => categories.map((category) => ({ value: category.id, label: category.name })),
+    [categories]
+  )
+  const categoryNameById = useMemo(
+    () => new Map(categories.map((category) => [category.id, category.name])),
+    [categories]
+  )
 
   const salesByBookId = useMemo(() => {
     return new Map((bookSalesQuery.data ?? []).map((item) => [item.bookId, item]))
@@ -71,6 +82,7 @@ export default function AdminBooksPage({ canDelete = true, showSalesStats = true
   const books = useMemo(
     () =>
       (booksQuery.data ?? []).filter((book) => {
+        const categoryNames = book.categoryIds?.map((id) => categoryNameById.get(id)).filter(Boolean) ?? []
         const matchesSearch = matchesKeyword(
           keyword,
           book.id,
@@ -79,15 +91,17 @@ export default function AdminBooksPage({ canDelete = true, showSalesStats = true
           book.publisher,
           book.isbn,
           book.publicationYear,
+          ...categoryNames,
           book.price,
           book.quantity,
           showSalesStats ? salesByBookId.get(book.id)?.quantitySold ?? 0 : undefined
         )
         if (!matchesSearch) return false
+        if (categoryFilter && !book.categoryIds?.includes(categoryFilter)) return false
         if (!showSalesStats || !hasSalesDateFilter) return true
         return (salesByBookId.get(book.id)?.quantitySold ?? 0) > 0
       }),
-    [booksQuery.data, hasSalesDateFilter, keyword, salesByBookId, showSalesStats]
+    [booksQuery.data, categoryFilter, categoryNameById, hasSalesDateFilter, keyword, salesByBookId, showSalesStats]
   )
 
   const columns: ColumnsType<AdminBook> = [
@@ -200,6 +214,17 @@ export default function AdminBooksPage({ canDelete = true, showSalesStats = true
             value={keyword}
             onChange={(event) => setKeyword(event.target.value)}
           />
+          <Select
+            allowClear
+            showSearch
+            optionFilterProp="label"
+            placeholder="Lọc theo danh mục"
+            style={{ width: 260 }}
+            loading={categoriesQuery.isLoading}
+            value={categoryFilter}
+            options={categoryOptions}
+            onChange={setCategoryFilter}
+          />
           {showSalesStats ? (
             <DatePicker.RangePicker
               allowClear
@@ -220,7 +245,7 @@ export default function AdminBooksPage({ canDelete = true, showSalesStats = true
       <StaffBookModal
         open={modalOpen}
         book={editingBook}
-        categories={categoriesQuery.data ?? []}
+        categories={categories}
         loading={saveMutation.isPending}
         onCancel={() => setModalOpen(false)}
         onSubmit={(payload) => saveMutation.mutate(payload)}
