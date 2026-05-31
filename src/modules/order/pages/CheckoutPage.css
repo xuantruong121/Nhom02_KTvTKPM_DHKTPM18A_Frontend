@@ -61,7 +61,10 @@
   padding-top: 2px;
 }
 
-.checkout-recipient-fields,
+.checkout-recipient-fields {
+  margin-bottom: 4px;
+}
+
 .checkout-section .checkout-address-list {
   display: none;
 }

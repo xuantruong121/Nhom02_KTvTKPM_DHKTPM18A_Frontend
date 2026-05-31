@@ -354,6 +354,7 @@ export function CheckoutPage() {
                     <Form.Item
                       label="Số điện thoại"
                       name="customerPhone"
+                      rules={[{ required: true, message: 'Vui lòng nhập số điện thoại nhận hàng' }]}
                     >
                       <Input placeholder="VD: 0901234567" />
                     </Form.Item>
