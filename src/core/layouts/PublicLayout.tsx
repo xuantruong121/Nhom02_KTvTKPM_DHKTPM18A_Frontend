@@ -4,7 +4,6 @@ import {
   BookOutlined,
   EnvironmentOutlined,
   FileTextOutlined,
-  GlobalOutlined,
   HeartOutlined,
   LoginOutlined,
   LogoutOutlined,
@@ -28,7 +27,6 @@ import {
   List,
   Popover,
   Row,
-  Select,
   Space,
   Typography,
 } from 'antd'
@@ -303,16 +301,6 @@ function PublicLayoutImpl() {
                 Giỏ hàng
               </Button>
             </Badge>
-            <Select
-              size="small"
-              defaultValue="vi"
-              className="public-language"
-              suffixIcon={<GlobalOutlined />}
-              options={[
-                { value: 'vi', label: 'VN' },
-                { value: 'en', label: 'EN' },
-              ]}
-            />
             {user ? (
               <Dropdown menu={userMenu} trigger={['click']}>
                 <Space className="public-user">

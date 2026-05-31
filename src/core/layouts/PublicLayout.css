@@ -86,10 +86,6 @@
   white-space: nowrap;
 }
 
-.public-language {
-  width: 78px;
-}
-
 .public-user {
   cursor: pointer;
   max-width: 180px;

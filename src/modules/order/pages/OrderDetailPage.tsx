@@ -80,6 +80,7 @@ export function OrderDetailPage() {
   const [returnForm] = Form.useForm<ReturnFormValues>()
   const [submittingReturn, setSubmittingReturn] = useState(false)
   const [paying, setPaying] = useState(false)
+  const [switchingToCod, setSwitchingToCod] = useState(false)
   const [cancelling, setCancelling] = useState(false)
   const [confirmingReceived, setConfirmingReceived] = useState(false)
   const [files, setFiles] = useState<UploadFile[]>([])
@@ -111,6 +112,23 @@ export function OrderDetailPage() {
       void message.error(getErrorMessage(err))
     } finally {
       setPaying(false)
+    }
+  }
+
+  const handleSwitchToCod = async () => {
+    if (!order) return
+    setSwitchingToCod(true)
+    try {
+      await orderApi.switchPendingVnpayOrderToCod(order.orderId)
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['orders', order.orderId] }),
+        queryClient.invalidateQueries({ queryKey: ['orders', 'my'] }),
+      ])
+      void message.success('Đã chuyển đơn hàng sang thanh toán COD')
+    } catch (err) {
+      void message.error(getErrorMessage(err))
+    } finally {
+      setSwitchingToCod(false)
     }
   }
 
@@ -299,6 +317,19 @@ export function OrderDetailPage() {
                   <Button type="primary" block icon={<BankOutlined />} loading={paying} onClick={handlePay}>
                     Thanh toán VNPay
                   </Button>
+                )}
+                {canPay && (
+                  <Popconfirm
+                    title="Chuyển sang thanh toán COD?"
+                    description="Đơn hàng đang chờ thanh toán VNPay sẽ được chuyển sang thanh toán khi nhận hàng."
+                    okText="Chuyển sang COD"
+                    cancelText="Đóng"
+                    onConfirm={handleSwitchToCod}
+                  >
+                    <Button block loading={switchingToCod}>
+                      Chuyển sang COD
+                    </Button>
+                  </Popconfirm>
                 )}
                 {canCancel && (
                   <Popconfirm
