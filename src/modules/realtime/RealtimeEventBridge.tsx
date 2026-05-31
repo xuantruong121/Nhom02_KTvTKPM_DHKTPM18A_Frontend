@@ -40,6 +40,11 @@ export default function RealtimeEventBridge() {
       }
     }
 
+    const invalidateNotificationCaches = () => {
+      void queryClient.invalidateQueries({ queryKey: ['notifications'] })
+      void queryClient.refetchQueries({ queryKey: ['notifications'], type: 'active' })
+    }
+
     const invalidateInventoryCaches = (bookId?: number | null) => {
       void queryClient.invalidateQueries({ queryKey: ['admin', 'inventory'] })
       void queryClient.invalidateQueries({ queryKey: ['admin', 'books'] })
@@ -107,7 +112,7 @@ export default function RealtimeEventBridge() {
     }
 
     eventSource.addEventListener('notification', () => {
-      void queryClient.invalidateQueries({ queryKey: ['notifications'] })
+      invalidateNotificationCaches()
     })
 
     eventSource.addEventListener('realtime', (event) => {
@@ -131,18 +136,21 @@ export default function RealtimeEventBridge() {
           break
         case 'PAYMENT_SUCCESS':
           invalidateOrderCaches(payload.orderId)
+          invalidateNotificationCaches()
           if (user?.role === 'CUSTOMER') {
             notification.success({ message: payload.message || 'Thanh toán thành công', placement: 'topRight' })
           }
           break
         case 'PAYMENT_FAILED':
           invalidateOrderCaches(payload.orderId)
+          invalidateNotificationCaches()
           if (user?.role === 'CUSTOMER') {
             notification.warning({ message: payload.message || 'Thanh toán chưa hoàn tất', placement: 'topRight' })
           }
           break
         case 'ORDER_STATUS_CHANGED':
           invalidateOrderCaches(payload.orderId)
+          invalidateNotificationCaches()
           if (user?.role === 'CUSTOMER') {
             notification.info({ message: payload.message || 'Đơn hàng đã được cập nhật', placement: 'topRight' })
           }

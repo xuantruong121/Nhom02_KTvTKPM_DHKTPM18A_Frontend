@@ -8,6 +8,7 @@ import {
   LoginOutlined,
   LogoutOutlined,
   PercentageOutlined,
+  RollbackOutlined,
   SearchOutlined,
   ShoppingCartOutlined,
   UserOutlined,
@@ -230,6 +231,11 @@ function PublicLayoutImpl() {
           key: 'orders',
           icon: <FileTextOutlined />,
           label: <Link to="/orders">Đơn hàng của tôi</Link>,
+        },
+        {
+          key: 'returns',
+          icon: <RollbackOutlined />,
+          label: <Link to="/returns">Yêu cầu trả hàng</Link>,
         },
         {
           key: 'favorites',
