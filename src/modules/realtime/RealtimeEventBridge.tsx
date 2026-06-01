@@ -181,7 +181,10 @@ export default function RealtimeEventBridge() {
           invalidateOrders(payload.orderId)
           invalidateNotifications()
           if (user?.role === 'CUSTOMER') {
-            notification.info({ message: payload.message || 'Đơn hàng đã được cập nhật', placement: 'topRight' })
+            notification.info({
+              message: payload.message || 'Đơn hàng đã được cập nhật',
+              placement: 'topRight',
+            })
           }
           break
         case 'BOOK_CHANGED':
