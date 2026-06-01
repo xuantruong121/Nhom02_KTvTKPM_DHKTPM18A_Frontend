@@ -334,7 +334,7 @@ function AgentPayload({
   const visibleActions = card ? (agent.actions ?? []).filter((action) => !isPendingConfirmationAction(action)) : (agent.actions ?? [])
   const visibleSuggestions = card ? (agent.suggestions ?? []).filter((suggestion) => !isConfirmationSuggestion(suggestion)) : (agent.suggestions ?? [])
   const primaryBook = agent.books?.[0] ?? cardBookToLegacy(displayCards.find((item) => item.type === 'BOOK_CARD'))
-  const shouldShowAddresses = isCheckoutAddressPrompt(agent)
+  const shouldShowAddresses = isCheckoutAddressPrompt(agent, primaryBook)
   const profileQuery = useQuery({
     queryKey: ['account', 'profile'],
     queryFn: () => accountApi.getProfile(),
@@ -478,10 +478,10 @@ function AgentPayload({
                 <Typography.Text type="secondary">{address.phoneNumber || profileQuery.data?.phoneNumber}</Typography.Text>
               ) : null}
               <Space size={6} wrap>
-                <Button size="small" type="primary" disabled={loading} onClick={() => onSendMessage(buildCheckoutMessage(primaryBook, address, 'COD', profileQuery.data?.phoneNumber))}>
+                <Button size="small" type="primary" disabled={loading} onClick={() => onClientAction(buildCheckoutClientAction(agent.checkoutScope, primaryBook, address, 'COD', profileQuery.data?.phoneNumber))}>
                   COD
                 </Button>
-                <Button size="small" disabled={loading} onClick={() => onSendMessage(buildCheckoutMessage(primaryBook, address, 'VNPAY', profileQuery.data?.phoneNumber))}>
+                <Button size="small" disabled={loading} onClick={() => onClientAction(buildCheckoutClientAction(agent.checkoutScope, primaryBook, address, 'VNPAY', profileQuery.data?.phoneNumber))}>
                   VNPAY
                 </Button>
               </Space>
@@ -619,7 +619,7 @@ function handleSuggestionClick(
     navigate(`/books/${book.bookId}`)
     return
   }
-  if (normalized.includes('gio hang')) {
+  if (normalized === 'xem gio hang' || normalized === 'gio hang') {
     navigate('/cart')
     return
   }
@@ -646,23 +646,35 @@ function handleSuggestionClick(
   sendMessage(suggestion)
 }
 
-function isCheckoutAddressPrompt(agent: AgentResponse) {
+function isCheckoutAddressPrompt(agent: AgentResponse, book: AgentBookResult | undefined) {
   const message = normalizeSuggestion(agent.message || '')
   const suggestions = (agent.suggestions ?? []).map(normalizeSuggestion).join(' ')
-  return !agent.confirmationCard && (message.includes('dia chi giao hang') || suggestions.includes('nhap dia chi'))
+  const hasCheckoutTarget = agent.checkoutScope === 'CART' || (agent.checkoutScope === 'BOOK' && Boolean(book))
+  return !agent.confirmationCard && hasCheckoutTarget && (message.includes('dia chi giao hang') || suggestions.includes('nhap dia chi'))
 }
 
 function formatAddress(address: AddressDto) {
   return [address.street, address.ward, address.city].filter(Boolean).join(', ')
 }
 
-function buildCheckoutMessage(book: AgentBookResult | undefined, address: AddressDto, paymentMethod: 'COD' | 'VNPAY', fallbackPhone?: string) {
+function buildCheckoutClientAction(
+  checkoutScope: AgentResponse['checkoutScope'],
+  book: AgentBookResult | undefined,
+  address: AddressDto,
+  paymentMethod: 'COD' | 'VNPAY',
+  fallbackPhone?: string,
+): AgentClientAction {
   const requestedQuantity = book?.requestedQuantity && book.requestedQuantity > 0 ? book.requestedQuantity : null
-  const quantityText = requestedQuantity ? ` ${requestedQuantity} cuốn` : ''
-  const bookText = book ? `${quantityText} sách ${book.title}` : ''
-  const phone = address.phoneNumber || fallbackPhone
-  const phoneText = phone ? `; số điện thoại: ${phone}` : ''
-  return `Đặt hàng ${paymentMethod}${bookText}; địa chỉ giao hàng: ${formatAddress(address)}${phoneText}`
+  const effectiveScope = checkoutScope === 'CART' ? 'CART' : book ? 'BOOK' : checkoutScope
+  return {
+    action: 'PLACE_ORDER',
+    checkoutScope: effectiveScope,
+    bookId: effectiveScope === 'BOOK' ? book?.bookId : undefined,
+    quantity: effectiveScope === 'BOOK' ? requestedQuantity || 1 : undefined,
+    shippingAddress: formatAddress(address),
+    customerPhone: address.phoneNumber || fallbackPhone,
+    paymentMethod,
+  }
 }
 
 function normalizeSuggestion(value: string) {

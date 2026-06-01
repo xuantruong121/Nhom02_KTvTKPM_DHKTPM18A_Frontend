@@ -47,6 +47,7 @@ export type AgentOrderResult = {
 
 export type AgentClientAction = {
   action: string
+  checkoutScope?: 'BOOK' | 'CART' | null
   bookId?: number | null
   orderId?: number | null
   addressId?: number | null
@@ -94,6 +95,7 @@ export type AgentPendingAction = {
 
 export type AgentResponse = {
   message: string
+  checkoutScope?: 'BOOK' | 'CART' | null
   intent?: string | null
   source?: string | null
   confidence?: number | null
