@@ -96,11 +96,12 @@ export function OrderDetailPage() {
   )
 
   const order = orderQuery.data
-  const statusMeta = getOrderStatusMeta(order?.fulfillmentStatus)
-  const canPay = order?.fulfillmentStatus === 'PENDING'
-  const canCancel = order?.fulfillmentStatus === 'PENDING'
-  const canReturn = order?.fulfillmentStatus === 'DELIVERED'
-  const canConfirmReceived = order?.fulfillmentStatus === 'DELIVERING'
+  const fulfillmentStatus = String(order?.fulfillmentStatus ?? '').trim().toUpperCase()
+  const statusMeta = getOrderStatusMeta(fulfillmentStatus)
+  const canPay = fulfillmentStatus === 'PENDING'
+  const canCancel = fulfillmentStatus === 'PENDING' || fulfillmentStatus === 'CONFIRMED'
+  const canReturn = fulfillmentStatus === 'DELIVERED'
+  const canConfirmReceived = fulfillmentStatus === 'DELIVERING'
 
   const handlePay = async () => {
     if (!order) return
@@ -334,7 +335,7 @@ export function OrderDetailPage() {
                 {canCancel && (
                   <Popconfirm
                     title="Hủy đơn hàng này?"
-                    description="Bạn chỉ có thể hủy đơn khi đơn chưa được xác nhận."
+                    description="Bạn có thể hủy đơn khi đơn đang chờ thanh toán hoặc chờ xác nhận."
                     okText="Hủy đơn"
                     cancelText="Đóng"
                     okButtonProps={{ danger: true }}
