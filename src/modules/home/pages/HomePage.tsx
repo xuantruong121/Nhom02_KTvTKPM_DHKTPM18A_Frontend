@@ -246,7 +246,7 @@ export function HomePage() {
   const categoriesQuery = useApiQuery(['catalog', 'categories'], () => catalogApi.getCategories())
   const booksQuery = useApiQuery(['catalog', 'books'], () => catalogApi.getBooks())
   const discoveryQuery = useApiQuery(['home', 'discovery'], () =>
-    homeApi.getDiscovery({ limit: 8 })
+    homeApi.getDiscovery({ limit: 20 })
   )
   const categorySalesQuery = useApiQuery(['home', 'rankings', 'sales', 'featured-categories'], () =>
     homeApi.getRankingBooks('SALES_RANKING', { limit: 100 })
