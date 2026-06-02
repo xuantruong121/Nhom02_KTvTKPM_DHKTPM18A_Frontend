@@ -46,6 +46,9 @@ type FlashSaleGroup = {
   items: FlashSale[]
 }
 
+type DateRangeFilter = [Dayjs | null, Dayjs | null] | null
+type SortDirection = 'asc' | 'desc'
+
 function isGroupExpired(group: FlashSaleGroup) {
   return dayjs(group.endAt).isBefore(dayjs())
 }
@@ -87,6 +90,8 @@ export default function AdminFlashSalesPage() {
   const [editingGroup, setEditingGroup] = useState<FlashSaleGroup | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
   const [modalMode, setModalMode] = useState<ModalMode>('create')
+  const [dateFilter, setDateFilter] = useState<DateRangeFilter>(null)
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
 
   const flashSalesQuery = useApiQuery(['admin', 'flashSales'], () => adminApi.getFlashSales())
   const booksQuery = useApiQuery(['admin', 'books', 'flashSale'], () => adminApi.getBooks())
@@ -258,7 +263,20 @@ export default function AdminFlashSalesPage() {
 
   const groupedFlashSales = useMemo(() => {
     const groups = new Map<string, FlashSaleGroup>()
-    for (const sale of flashSalesQuery.data ?? []) {
+    const [fromDate, toDate] = dateFilter ?? [null, null]
+    const filteredSales = (flashSalesQuery.data ?? []).filter((sale) => {
+      const startAt = dayjs(sale.startAt)
+      const endAt = dayjs(sale.endAt)
+      if (fromDate && endAt.isBefore(fromDate.startOf('day'))) {
+        return false
+      }
+      if (toDate && startAt.isAfter(toDate.endOf('day'))) {
+        return false
+      }
+      return true
+    })
+
+    for (const sale of filteredSales) {
       const key = `${dayjs(sale.startAt).format('YYYY-MM-DDTHH:mm:ss')}__${dayjs(sale.endAt).format('YYYY-MM-DDTHH:mm:ss')}`
       const group = groups.get(key)
       if (group) {
@@ -273,10 +291,11 @@ export default function AdminFlashSalesPage() {
       }
     }
 
-    return [...groups.values()].sort(
-      (a, b) => dayjs(a.startAt).valueOf() - dayjs(b.startAt).valueOf()
-    )
-  }, [flashSalesQuery.data])
+    return [...groups.values()].sort((a, b) => {
+      const diff = dayjs(a.startAt).valueOf() - dayjs(b.startAt).valueOf()
+      return sortDirection === 'asc' ? diff : -diff
+    })
+  }, [dateFilter, flashSalesQuery.data, sortDirection])
 
   const columns: ColumnsType<FlashSale> = [
     {
@@ -476,6 +495,39 @@ export default function AdminFlashSalesPage() {
           ) : null}
         </Form>
       </Modal>
+
+      <Card>
+        <Space wrap align="end" size="middle">
+          <Space direction="vertical" size={4}>
+            <Typography.Text strong>Loc theo ngay</Typography.Text>
+            <DatePicker.RangePicker
+              value={dateFilter}
+              format="DD/MM/YYYY"
+              onChange={(value) => setDateFilter(value as DateRangeFilter)}
+            />
+          </Space>
+          <Space direction="vertical" size={4}>
+            <Typography.Text strong>Sap xep</Typography.Text>
+            <Select
+              value={sortDirection}
+              style={{ width: 170 }}
+              onChange={setSortDirection}
+              options={[
+                { value: 'desc', label: 'Moi nhat truoc' },
+                { value: 'asc', label: 'Cu nhat truoc' },
+              ]}
+            />
+          </Space>
+          <Button
+            onClick={() => {
+              setDateFilter(null)
+              setSortDirection('desc')
+            }}
+          >
+            Xoa loc
+          </Button>
+        </Space>
+      </Card>
 
       <Space direction="vertical" size="middle" style={{ width: '100%' }}>
         {flashSalesQuery.isLoading ? (

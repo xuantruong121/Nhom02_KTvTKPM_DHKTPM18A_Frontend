@@ -8,6 +8,7 @@ import { useIsAuthenticated } from '@/shared/store/authStore'
 type AddToCartInput = {
   bookId: number
   quantity?: number
+  flashSale?: boolean
   successMessage?: string | false
 }
 
@@ -18,11 +19,17 @@ export function useAddToCart() {
   const queryClient = useQueryClient()
   const { message } = App.useApp()
 
-  const mutation = useApiMutation((payload: AddToCartInput) =>
-    cartApi.addItem({ bookId: payload.bookId, quantity: payload.quantity ?? 1 })
-  )
+  const mutation = useApiMutation((payload: AddToCartInput) => {
+    const request = { bookId: payload.bookId, quantity: payload.quantity ?? 1 }
+    return payload.flashSale ? cartApi.addFlashSaleItem(request) : cartApi.addItem(request)
+  })
 
-  const addToCart = async ({ bookId, quantity = 1, successMessage }: AddToCartInput) => {
+  const addToCart = async ({
+    bookId,
+    quantity = 1,
+    flashSale = false,
+    successMessage,
+  }: AddToCartInput) => {
     if (!isAuthenticated) {
       navigate('/auth/login', {
         state: {
@@ -33,7 +40,7 @@ export function useAddToCart() {
     }
 
     await mutation.mutateAsync(
-      { bookId, quantity },
+      { bookId, quantity, flashSale },
       {
         onSuccess: async () => {
           await Promise.all([

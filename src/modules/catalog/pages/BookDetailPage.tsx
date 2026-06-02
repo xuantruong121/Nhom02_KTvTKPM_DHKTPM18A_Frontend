@@ -132,6 +132,7 @@ export function BookDetailPage() {
     dayjs().isAfter(dayjs(activeFlashSaleItem.startAt)) &&
     dayjs().isBefore(dayjs(activeFlashSaleItem.endAt)) &&
     activeFlashSaleItem.saleQuantity > 0
+  const isFlashSalePurchase = Boolean(saleIsRunning)
   const book =
     catalogBook && saleIsRunning
       ? {
@@ -249,6 +250,7 @@ export function BookDetailPage() {
     const added = await addToCart({
       bookId: book.id,
       quantity,
+      flashSale: isFlashSalePurchase,
       successMessage: false,
     })
 
@@ -381,7 +383,13 @@ export function BookDetailPage() {
                   icon={<ShoppingCartOutlined />}
                   disabled={stock <= 0}
                   loading={isAddingToCart}
-                  onClick={() => void addToCart({ bookId: book.id, quantity })}
+                  onClick={() =>
+                    void addToCart({
+                      bookId: book.id,
+                      quantity,
+                      flashSale: isFlashSalePurchase,
+                    })
+                  }
                 >
                   Thêm vào giỏ hàng
                 </Button>
